@@ -1,0 +1,21 @@
+{
+  "name": "phaser-game",
+  "version": "0.1.0",
+  "description": "starting scene",
+  "main": "app.js",
+  "scripts": {
+    "build": "webpack",
+    "start": "webpack --watch & live-server --port=8085"
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "kevin sutrisno",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.1",
+    "phaser": "^3.21.0",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.4",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
+  }
+}
