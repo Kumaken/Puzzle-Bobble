@@ -4,7 +4,8 @@
   "description": "starting scene",
   "main": "app.js",
   "scripts": {
-  "heroku-postbuild": "webpack -p"
+    "build": "webpack",
+    "start": "webpack --watch & live-server --port=8085"
   },
   "author": "kevin sutrisno",
   "license": "MIT",
