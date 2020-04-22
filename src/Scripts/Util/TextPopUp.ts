@@ -18,11 +18,11 @@ export interface ITextConfig {
 
 class TextPopUpHelper {
   private text: Phaser.GameObjects.Text | undefined = undefined;
-  private static m_instance: TextPopUpHelper;
+  private static instance: TextPopUpHelper;
   private m_timeEvent: Phaser.Time.TimerEvent | undefined = undefined;
 
   public static get Instance() {
-    return this.m_instance || (this.m_instance = new this());
+    return this.instance || (this.instance = new this());
   }
 
   /**

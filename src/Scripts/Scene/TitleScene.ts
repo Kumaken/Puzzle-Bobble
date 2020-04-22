@@ -2,25 +2,19 @@ import * as Phaser from "phaser";
 import FpsText from "../Object/FpsText";
 
 export default class TitleScene extends Phaser.Scene {
-
-  private fpsText:FpsText;
+  private fpsText: FpsText;
 
   constructor() {
     super({ key: "TitleScene" });
   }
 
-  preload(): void 
-  {
-     
+  preload(): void {}
+
+  create(): void {
+    this.fpsText = new FpsText(this);
   }
 
-  create(): void 
-  {
-      this.fpsText = new FpsText(this);
-  }
-
-  update(): void 
-  {
+  update(): void {
     this.fpsText.update();
   }
 }
