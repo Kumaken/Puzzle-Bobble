@@ -6,11 +6,7 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.path = "src/Assets/";
-    this.load.spritesheet("bubble", "bubblesprite.png", {
-      frameWidth: 180,
-      frameHeight: 180,
-    });
+
   }
 
   create(): void {
