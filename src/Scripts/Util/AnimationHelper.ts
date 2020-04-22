@@ -1,9 +1,18 @@
 import * as Phaser from "phaser";
 
 export default class AnimationHelper {
+  /**
+   * Give pulsating animation to an object
+   * @param scene the current game scene
+   * @param object object to animate
+   * @param duration duration of the animation
+   * @param scale the target scale
+   * @param repeatTime how many times the animation should play
+   * @param delay the delay befor the animation start
+   */
   static Pulse(
     scene: Phaser.Scene,
-    object: Phaser.GameObjects.GameObject,
+    object: any,
     duration: number,
     scale: number,
     repeatTime: number = 0,
@@ -11,7 +20,7 @@ export default class AnimationHelper {
   ) {
     scene.tweens.add({
       targets: object,
-      scale: scale,
+      scale: object.scale * scale,
       ease: "Linear",
       duration: duration * 1000,
       yoyo: true,
@@ -20,16 +29,30 @@ export default class AnimationHelper {
     });
   }
 
+  /**
+   * Resize the object
+   * @param scene the current game scene
+   * @param object object to animate
+   * @param duration duration of the animation
+   * @param startScale the starting scale of the object
+   * @param targetScale the target scale of the resize
+   * @param delay the delay befor the animation start
+   */
+
   static Resize(
     scene: Phaser.Scene,
-    object: Phaser.GameObjects.GameObject,
+    object: any,
     duration: number,
-    scale: number,
+    startScale: number,
+    targetScale: number,
     delay: number = 0
   ) {
+
+    object.setScale(object.scale * startScale);
+    
     scene.tweens.add({
       targets: object,
-      scale: scale,
+      scale: object.scale * targetScale,
       ease: "Linear",
       duration: duration * 1000,
       yoyo: false,
@@ -38,26 +61,43 @@ export default class AnimationHelper {
     });
   }
 
+  /**
+   * Give swinging animation to object
+   * @param scene the current game scene
+   * @param object object to animate
+   * @param duration duration of the animation
+   * @param angle the angle of the swing
+   * @param repeatTime how many times the animation should play
+   */
   static Swing(
     scene: Phaser.Scene,
     object: Phaser.GameObjects.GameObject,
     duration: number,
-    degree: number,
+    angle: number,
     repeatTime: number
   ) {
     scene.tweens.add({
       targets: object,
-      angle: degree,
+      angle: angle,
       ease: "Linear",
       duration: (duration / 2) * 1000,
       yoyo: true,
       repeat: 0,
       onComplete: () => {
-        this.Swing(scene, object, duration, -degree, repeatTime);
+        this.Swing(scene, object, duration, -angle, repeatTime);
       },
     });
   }
 
+  /**
+   * Give swinging animation to object
+   * @param scene the current game scene
+   * @param object object to animate
+   * @param duration duration of the animation
+   * @param alpha the target alpha
+   * @param yoyo does the animation reverse on completion?
+   * @param delay the delay before animation start
+   */
   static ChangeAlpha(
     scene: Phaser.Scene,
     object: Phaser.GameObjects.GameObject,
@@ -77,6 +117,13 @@ export default class AnimationHelper {
     });
   }
 
+  /**
+   * Give swinging animation to object
+   * @param scene the current game scene
+   * @param object object to animate
+   * @param duration duration of the animation
+   * @param target the target position
+   */
   static MoveToTarget(
     scene: Phaser.Scene,
     object: Phaser.GameObjects.GameObject,
@@ -94,15 +141,22 @@ export default class AnimationHelper {
     });
   }
 
+  /**
+   * Give object ease in animation, object grows bigger and then dissipates
+   * @param scene the current game scene
+   * @param object object to animate
+   * @param duration duration of the animation
+   */
   static EaseInAndFade(scene: Phaser.Scene, object: any, duration: number) {
     let scale = object.scale;
-    this.Resize(scene, object, 0, 0.3);
-
+    
+    object.setScale(object.scale * 0.3);
+    
     let easeDuration = duration * 0.5;
 
     if (easeDuration > 0.3) easeDuration = 0.5;
 
-    this.Resize(scene, object, easeDuration, scale * 1.3);
+    this.Resize(scene, object, easeDuration, object.scale, scale * 1.3);
     this.ChangeAlpha(scene, object, duration - easeDuration, 0, false, 0.5);
   }
 }

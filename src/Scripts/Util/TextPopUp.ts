@@ -1,5 +1,5 @@
-import * as Phaser from 'phaser';
-import AnimationHelper from './AnimationHelper'
+import * as Phaser from "phaser";
+import AnimationHelper from "./AnimationHelper";
 
 export interface ITextConfig {
   x: number;
@@ -10,13 +10,11 @@ export interface ITextConfig {
   duration: number;
   font?: string;
   hasOutline?: boolean;
-  outlineThickness?: number,
+  outlineThickness?: number;
   outlineColor?: string;
   bold?: boolean;
-  easeIn?:boolean;
+  easeIn?: boolean;
 }
-
-
 
 class TextPopUpHelper {
   private text: Phaser.GameObjects.Text | undefined = undefined;
@@ -27,28 +25,41 @@ class TextPopUpHelper {
     return this.m_instance || (this.m_instance = new this());
   }
 
-  showText(
-    scene: Phaser.Scene,
-    config: ITextConfig,
-  ): Phaser.GameObjects.Text {
+  /**
+   * Create a text pop up for a certain duration
+  * @param x  position x (number)
+  * @param y position u (number)
+  * @param size size of text (number)
+  * @param text the text content (string)
+  * @param color the color of the text (string)
+  * @param duration the duration the text appear on screen in seconds (number)
+  * 
+  * Optionals:
+  * @param font the font face (string)
+  * @param hasOutline does the text have outline (boolean)
+  * @param outlineThickness the thickness of the outline (number)
+  * @param outlineColor the color of the outline (string)
+  * @param bold is the text bold (boolean)
+  * @param easeIn does the text has ease in animation (boolean)
+   */
+  showText(scene: Phaser.Scene, config: ITextConfig): Phaser.GameObjects.Text {
     if (this.text !== undefined) {
       this.text.destroy();
     }
 
     this.text = scene.add.text(0, 0, config.text, {
       color: config.color,
-      fontSize: config.size.toString() + 'px',
-      font: config.font
+      fontSize: config.size.toString() + "px",
+      font: config.font,
     });
 
-    if (config.hasOutline) 
-    {   
-         this.text.setStroke(config.outlineColor, config.outlineThickness)
+    if (config.hasOutline) {
+      this.text.setStroke(config.outlineColor, config.outlineThickness);
     }
 
     this.text.setOrigin(0.5).setPadding(25, 25, 25, 25);
 
-    if (config.bold) this.text.setFontStyle('bold');
+    if (config.bold) this.text.setFontStyle("bold");
 
     if (this.m_timeEvent !== undefined) {
       this.m_timeEvent.destroy();
@@ -63,8 +74,7 @@ class TextPopUpHelper {
 
     this.text.setDepth(2);
 
-    if(config.easeIn)
-    {
+    if (config.easeIn) {
       AnimationHelper.EaseInAndFade(scene, this.text, config.duration);
     }
 

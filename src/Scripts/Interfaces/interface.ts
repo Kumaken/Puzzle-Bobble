@@ -56,6 +56,7 @@ interface IEventConfig {
   gameplay_icon_switch: string;
 
   //Sprites
+  gameplay_sprite_bubble: string;
   gameplay_sprite_mascot_aim: string;
   gameplay_sprite_mascot_shooting_up: string;
 
@@ -114,7 +115,7 @@ interface ISaveConfig {
   save_config_last_stars: number[];
   //life
   save_config_current_life: number[];
-    
+
   save_config_last_score: number[];
 }
 
