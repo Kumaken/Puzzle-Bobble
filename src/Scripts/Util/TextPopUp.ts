@@ -1,28 +1,60 @@
-import * as Phaser from "phaser";
-import AnimationHelper from "./AnimationHelper";
+import * as Phaser from 'phaser';
+import AnimationHelper from './AnimationHelper';
+import AlignTool from './AlignTool';
 
-export interface ITextConfig {
+export enum ANIMATION_TYPE {
+  EASE_IN = 0,
+  EMBIGGEN = 1,
+  FLOAT_IN_FADE = 2,
+  ZHOOM_ZHOOM = 3
+}
+
+type AnimationData = {
+  position?: Phaser.Math.Vector2;
+};
+
+type TextStyle = {
+  fontSize: number;
+  fontStyle: string;
+  fontFamily: string;
+  color: string;
+  strokeThickness: number;
+  stroke: string;
+  shadow: {
+    offsetX: number;
+    offsetY: number;
+    color: string;
+    stroke: boolean;
+  };
+};
+
+export interface TextConfig {
   x: number;
   y: number;
-  size: number;
-  text: string;
-  color: string;
+  text: string | Phaser.GameObjects.Text;
   duration: number;
-  font?: string;
-  hasOutline?: boolean;
-  outlineThickness?: number;
-  outlineColor?: string;
-  bold?: boolean;
-  easeIn?: boolean;
+
+  style?: Partial<TextStyle>;
+  animType?: ANIMATION_TYPE;
+  retain?: boolean;
+  animData?: Partial<AnimationData>;
 }
 
 class TextPopUpHelper {
-  private text: Phaser.GameObjects.Text | undefined = undefined;
   private static instance: TextPopUpHelper;
-  private m_timeEvent: Phaser.Time.TimerEvent | undefined = undefined;
 
   public static get Instance() {
-    return this.instance || (this.instance = new this());
+    const instance = this.instance || (this.instance = new this());
+    return instance;
+  }
+
+  private m_scene!: Phaser.Scene;
+
+  private m_depth!: number;
+
+  init(scene: Phaser.Scene, depth: number) {
+    this.m_scene = scene;
+    this.m_depth = depth;
   }
 
   /**
@@ -30,56 +62,104 @@ class TextPopUpHelper {
    * @param scene the current game scene (Phaser.Scene)
    * @param x  position x (number)
    * @param y position u (number)
-   * @param size size of text (number)
    * @param text the text content (string)
-   * @param color the color of the text (string)
    * @param duration the duration the text appear on screen in seconds (number)
    *
    * Optionals:
-   * @param font the font face (string)
-   * @param hasOutline does the text have outline (boolean)
-   * @param outlineThickness the thickness of the outline (number)
-   * @param outlineColor the color of the outline (string)
-   * @param bold is the text bold (boolean)
-   * @param easeIn does the text has ease in animation (boolean)
+   * @param fontSize Size of the text
+   * @param fontStyle Style of the text (e.g. 'bold')
+   * @param fontFamily Text's font family
+   * @param color Text color
+   * @param strokeThickness Outline thickness
+   * @param stroke Color of outline (must give strokeThickness to work)
+   * @param shadow Gives shadow
    */
-  showText(scene: Phaser.Scene, config: ITextConfig): Phaser.GameObjects.Text {
-    if (this.text !== undefined) {
-      this.text.destroy();
+  showText(config: TextConfig) {
+    if (!this.m_scene) {
+      return undefined;
     }
 
-    this.text = scene.add.text(x, y, config.text, {
-      color: config.color,
-      fontSize: config.size.toString() + "px",
-      font: config.font,
-    });
+    const scaleWidth = AlignTool.getScaleScreenWidth(this.m_scene);
 
-    if (config.hasOutline) {
-      this.text.setStroke(config.outlineColor, config.outlineThickness);
+    let text: Phaser.GameObjects.Text;
+
+    if (typeof config.text === 'string') {
+      const style = { 
+        ...config.style, 
+        ...{ 
+          fontSize: `${config.style?.fontSize as number * scaleWidth}px`,
+          strokeThickness: (config.style?.strokeThickness as number) 
+            * scaleWidth
+        }
+      };
+  
+      text = this.m_scene.add.text(
+        config.x, 
+        config.y, 
+        config.text, 
+        style
+      );
+    } else {
+      text = config.text;
     }
 
-    this.text.setOrigin(0.5).setPadding(25, 25, 25, 25);
+    text.setOrigin(0.5).setDepth(this.m_depth);
 
-    if (config.bold) this.text.setFontStyle("bold");
+    let extraData;
+    if (config.animType !== undefined) {
+      switch(config.animType as ANIMATION_TYPE) {
+        case ANIMATION_TYPE.EASE_IN: {
+          extraData = AnimationHelper.EaseInAndFade(
+            this.m_scene, 
+            text, 
+            config.duration
+          );
+          break;
+        }
+        
+        case ANIMATION_TYPE.EMBIGGEN: {
+          extraData = AnimationHelper.Resize2(
+            this.m_scene, 
+            text, 
+            config.duration, 
+            { x: 0.5, y: 0.5 }, 
+            { x: 1.0, y: 1.0 }
+          );
+          break;
+        }
 
-    if (this.m_timeEvent !== undefined) {
-      this.m_timeEvent.destroy();
+        case ANIMATION_TYPE.FLOAT_IN_FADE: {
+          extraData =  AnimationHelper.FloatInAndFade(
+            this.m_scene, 
+            text, 
+            config.duration, 
+            { x: 1.1, y: 1.1 }, { x: 1.0, y: 1.0 }
+          );
+          break;
+        }
+
+        case ANIMATION_TYPE.ZHOOM_ZHOOM: {
+          AnimationHelper.ZhoomZhoom(
+            this.m_scene,
+            text,
+            config.duration,
+            config.animData?.position as Phaser.Math.Vector2
+          );
+          break;
+        }
+      }      
     }
 
-    this.m_timeEvent = scene.time.addEvent({
-      delay: config.duration * 1000,
-      callback: () => {
-        if (this.text !== undefined) this.text.setVisible(false);
-      },
-    });
-
-    this.text.setDepth(2);
-
-    if (config.easeIn) {
-      AnimationHelper.EaseInAndFade(scene, this.text, config.duration);
-    }
-
-    return this.text;
+    if (!config.retain) {
+      this.m_scene.time.delayedCall((config.duration) * 1000, () => {
+        text.setVisible(false);
+      });
+      this.m_scene.time.delayedCall((config.duration + 1) * 1000, () => {
+        text.destroy();
+      });
+    } 
+    
+    return { text, extraData };
   }
 }
 
