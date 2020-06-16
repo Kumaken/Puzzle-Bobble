@@ -1,7 +1,7 @@
-import "phaser";
-import {config, PhaserConfig} from "./Config/PhaserConfig"
+import 'phaser';
+import { config, PhaserConfig } from './Config/PhaserConfig';
 
-var game;
+let game: PhaserGame;
 
 export class PhaserGame extends Phaser.Game {
   constructor(config: PhaserConfig) {
@@ -9,10 +9,9 @@ export class PhaserGame extends Phaser.Game {
   }
 }
 window.onload = () => {
-   game = new PhaserGame(config);
+  game = new PhaserGame(config);
 };
 
-export function getGame()
-{
-    return game;
+export function getGame() {
+  return game;
 }

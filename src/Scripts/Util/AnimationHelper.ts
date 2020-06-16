@@ -25,7 +25,7 @@ export default class AnimationHelper {
     duration: number,
     scale: number,
     repeatTime = 0,
-    delay = 0,
+    delay = 0
   ) {
     const tween = this.getTween(
       scene,
@@ -37,9 +37,9 @@ export default class AnimationHelper {
         duration: duration * 1000,
         yoyo: true,
         repeat: repeatTime,
-        delay: delay * 1000,
+        delay: delay * 1000
       },
-      'pulse',
+      'pulse'
     );
 
     if (tween.hasStarted) {
@@ -68,7 +68,7 @@ export default class AnimationHelper {
     startScale: number,
     targetScale: number,
     delay = 0,
-    yoyo = false,
+    yoyo = false
   ) {
     object.setScale(object.scale * startScale);
 
@@ -82,9 +82,9 @@ export default class AnimationHelper {
         duration: duration * 1000,
         yoyo,
         repeat: 0,
-        delay: delay * 1000,
+        delay: delay * 1000
       },
-      'resize',
+      'resize'
     );
 
     if (tween.hasStarted) {
@@ -127,9 +127,9 @@ export default class AnimationHelper {
         duration: duration * 1000,
         yoyo: false,
         repeat: 0,
-        delay: delay * 1000,
+        delay: delay * 1000
       },
-      'resize2',
+      'resize2'
     );
 
     if (tween.hasStarted) {
@@ -168,7 +168,7 @@ export default class AnimationHelper {
     startAngle: number,
     targetAngle: number,
     delay = 0,
-    yoyo = false,
+    yoyo = false
   ) {
     object.angle = startAngle;
 
@@ -182,9 +182,9 @@ export default class AnimationHelper {
         duration: duration * 1000,
         yoyo,
         repeat: 0,
-        delay: delay * 1000,
+        delay: delay * 1000
       },
-      'resize',
+      'resize'
     );
 
     if (tween.hasStarted) {
@@ -209,9 +209,8 @@ export default class AnimationHelper {
     object: Phaser.GameObjects.GameObject,
     duration: number,
     angle: number,
-    repeatTime = 0,
+    repeatTime = 0
   ) {
-    
     const tween = this.getTween(
       scene,
       object,
@@ -224,9 +223,9 @@ export default class AnimationHelper {
         repeat: 0,
         onComplete: () => {
           this.Swing(scene, object, duration, -angle, repeatTime - 1);
-        },
+        }
       },
-      `swing${repeatTime}`,
+      `swing${repeatTime}`
     );
 
     if (tween.hasStarted) {
@@ -283,9 +282,9 @@ export default class AnimationHelper {
         ease: 'Linear',
         duration: duration * 1000,
         yoyo,
-        repeat,
+        repeat
       },
-      'change-alpha',
+      'change-alpha'
     );
 
     if (tween.hasStarted) {
@@ -311,7 +310,7 @@ export default class AnimationHelper {
     duration: number,
     color: number,
     yoyo = false,
-    delay = 0,
+    delay = 0
   ) {
     const c1 = Phaser.Display.Color.HexStringToColor('#ffffff');
     const c2 = Phaser.Display.Color.IntegerToColor(color);
@@ -333,13 +332,13 @@ export default class AnimationHelper {
             c1,
             c2,
             100,
-            tweenStep,
+            tweenStep
           );
           const colourInt = Phaser.Display.Color.GetColor(col.r, col.g, col.b);
           object.setTint(colourInt);
-        },
+        }
       },
-      'tint-color',
+      'tint-color'
     );
 
     if (tween.hasStarted) {
@@ -354,7 +353,6 @@ export default class AnimationHelper {
     return tween;
   }
 
-
   /**
    * Give swinging animation to object
    * @param scene the current game scene
@@ -368,11 +366,11 @@ export default class AnimationHelper {
     object: any,
     duration: number,
     target: Phaser.Math.Vector2,
-    ease = 'Linear',
+    ease = 'Linear'
   ) {
     const step = new Phaser.Math.Vector2(
       target.x - object.x,
-      target.y - object.y,
+      target.y - object.y
     );
 
     const tween = this.getTween(
@@ -385,9 +383,9 @@ export default class AnimationHelper {
         ease: 'Linear',
         duration: duration * 1000,
         yoyo: false,
-        repeat: 0,
+        repeat: 0
       },
-      'move-to-target',
+      'move-to-target'
     );
 
     if (tween.hasStarted) {
@@ -412,11 +410,11 @@ export default class AnimationHelper {
     duration: number,
     target: Phaser.Math.Vector2,
     ease = 'Linear',
-    repeat = -1,
+    repeat = -1
   ) {
     const step = new Phaser.Math.Vector2(
       target.x - object.x,
-      target.y - object.y,
+      target.y - object.y
     );
 
     const tween = this.getTween(
@@ -434,8 +432,8 @@ export default class AnimationHelper {
             },
             getEnd(target: Phaser.Math.Vector2, key: any, value: any) {
               return target.x + step.x;
-            },
-          },
+            }
+          }
         },
         y: {
           duration: 1000 * duration,
@@ -447,15 +445,15 @@ export default class AnimationHelper {
             },
             getEnd(target: Phaser.Math.Vector2, key: any, value: any) {
               return target.y + step.y;
-            },
-          },
+            }
+          }
         },
         ease: 'Linear',
         duration: duration * 1000,
         yoyo: false,
-        repeat: 0,
+        repeat: 0
       },
-      'move-to-target',
+      'move-to-target'
     );
 
     if (tween.hasStarted) {
@@ -476,12 +474,12 @@ export default class AnimationHelper {
   static EaseInAndFade(scene: Phaser.Scene, object: any, duration: number) {
     const startScale = {
       x: object.scaleX * 0.3,
-      y: object.scaleY * 0.3,
+      y: object.scaleY * 0.3
     };
 
     const finalScale = {
       x: object.scaleX,
-      y: object.scaleY,
+      y: object.scaleY
     };
 
     let easeDuration = duration * 0.5;
@@ -490,26 +488,28 @@ export default class AnimationHelper {
 
     return [
       this.Resize2(scene, object, easeDuration, startScale, finalScale),
-      this.ChangeAlpha(scene, object, duration - easeDuration, 0, false, 0.5),
+      this.ChangeAlpha(scene, object, duration - easeDuration, 0, false, 0.5)
     ];
   }
 
   /**
    * Creates flash animation
-   * @param scene 
+   * @param scene
    * @param object Image to flash
    * @param duration Duration of flash
    */
   static Flash(
-    scene: Phaser.Scene, 
-    object: Phaser.GameObjects.Image, 
-    duration: number, 
+    scene: Phaser.Scene,
+    object: Phaser.GameObjects.Image,
+    duration: number,
     color: number
   ) {
-    const flashObject = scene.add.image(object.x, object.y, object.texture.key)
-      .setTintFill(color).setOrigin(object.originX, object.originY)
+    const flashObject = scene.add
+      .image(object.x, object.y, object.texture.key)
+      .setTintFill(color)
+      .setOrigin(object.originX, object.originY)
       .setDepth(object.depth);
-    
+
     const tween = this.ChangeAlpha(scene, flashObject, 1, 0.1, false, 0, 1, 0);
 
     return {
@@ -528,68 +528,88 @@ export default class AnimationHelper {
    * @param targetScale Resize final scale
    */
   static FlashAndResize(
-    scene: Phaser.Scene, 
-    object: Phaser.GameObjects.Image, 
-    duration: number, 
+    scene: Phaser.Scene,
+    object: Phaser.GameObjects.Image,
+    duration: number,
     color: number,
     startScale: { x: number; y: number },
-    targetScale: { x: number; y: number },
+    targetScale: { x: number; y: number }
   ) {
     const flashData = this.Flash(scene, object, duration, color);
     return {
       flashData,
-      flashTween: this.Resize2(scene, flashData.flashObject, duration, 
-        startScale, targetScale),
-      objectTween: this.Resize2(scene, object, duration, startScale, 
-        targetScale)
+      flashTween: this.Resize2(
+        scene,
+        flashData.flashObject,
+        duration,
+        startScale,
+        targetScale
+      ),
+      objectTween: this.Resize2(
+        scene,
+        object,
+        duration,
+        startScale,
+        targetScale
+      )
     };
   }
 
   /**
    * Floats the image object up
-   * @param scene 
-   * @param object 
-   * @param duration 
-   * @param color 
-   * @param startScale 
-   * @param targetScale 
+   * @param scene
+   * @param object
+   * @param duration
+   * @param color
+   * @param startScale
+   * @param targetScale
    */
   static FloatInAndFade(
-    scene: Phaser.Scene, 
-    object: Phaser.GameObjects.Image | Phaser.GameObjects.Text, 
-    duration: number, 
+    scene: Phaser.Scene,
+    object: Phaser.GameObjects.Image | Phaser.GameObjects.Text,
+    duration: number,
     startScale: { x: number; y: number },
-    targetScale: { x: number; y: number },
+    targetScale: { x: number; y: number }
   ) {
-    const floatTween = () => this.MoveToTarget(scene, object, 
-      duration * 0.75, new Phaser.Math.Vector2(object.x, (object.y as number) - 
-      (object.height as number / 10)));
-    const alphaTween = () => this.ChangeAlpha(scene, object, 
-      duration * 0.375, 0);
-    const resizeTween = this.Resize2(scene, object, duration * 0.25, 
-      startScale, targetScale)
-      .on('complete', () => {
-        floatTween();
-        scene.time.delayedCall(duration * 0.375 * 1000, alphaTween);
-      });
+    const floatTween = () =>
+      this.MoveToTarget(
+        scene,
+        object,
+        duration * 0.75,
+        new Phaser.Math.Vector2(
+          object.x,
+          (object.y as number) - (object.height as number) / 10
+        )
+      );
+    const alphaTween = () =>
+      this.ChangeAlpha(scene, object, duration * 0.375, 0);
+    const resizeTween = this.Resize2(
+      scene,
+      object,
+      duration * 0.25,
+      startScale,
+      targetScale
+    ).on('complete', () => {
+      floatTween();
+      scene.time.delayedCall(duration * 0.375 * 1000, alphaTween);
+    });
 
     return { floatTween, alphaTween, resizeTween };
   }
 
   /**
    * Space wormhole
-   * @param scene 
-   * @param object 
-   * @param duration 
+   * @param scene
+   * @param object
+   * @param duration
    * @param position Wormhole coordinate in 2d-plane x and y
    */
   static ZhoomZhoom(
-    scene: Phaser.Scene, 
-    object: Phaser.GameObjects.Image | Phaser.GameObjects.Text, 
-    duration: number, 
+    scene: Phaser.Scene,
+    object: Phaser.GameObjects.Image | Phaser.GameObjects.Text,
+    duration: number,
     target: Phaser.Math.Vector2
   ) {
-
     const targetScale1 = {
       x: object.scaleX * 1.2,
       y: object.scaleY * 1.2
@@ -609,33 +629,37 @@ export default class AnimationHelper {
       second: 0.4
     };
 
-    scene.add.tween({
-      targets: object,
-      scaleX: targetScale1.x,
-      scaleY: targetScale1.y,
-      duration: duration * portion.first * 1000
-    }).on('complete', () => {
-      scene.add.tween({
+    scene.add
+      .tween({
         targets: object,
-        scaleX: targetScale2.x,
-        scaleY: targetScale2.y,
-        duration: duration * portion.second * 1000
+        scaleX: targetScale1.x,
+        scaleY: targetScale1.y,
+        duration: duration * portion.first * 1000
+      })
+      .on('complete', () => {
+        scene.add.tween({
+          targets: object,
+          scaleX: targetScale2.x,
+          scaleY: targetScale2.y,
+          duration: duration * portion.second * 1000
+        });
       });
-    });
 
-    scene.add.tween({
-      targets: object,
-      x: intermediaryPosition.x,
-      y: intermediaryPosition.y,
-      duration: duration * portion.first * 1000
-    }).on('complete', () => {
-      scene.add.tween({
+    scene.add
+      .tween({
         targets: object,
-        x: target.x,
-        y: target.y,
-        duration: duration * portion.second * 1000
+        x: intermediaryPosition.x,
+        y: intermediaryPosition.y,
+        duration: duration * portion.first * 1000
+      })
+      .on('complete', () => {
+        scene.add.tween({
+          targets: object,
+          x: target.x,
+          y: target.y,
+          duration: duration * portion.second * 1000
+        });
       });
-    });
   }
 
   /**
@@ -650,7 +674,7 @@ export default class AnimationHelper {
     scene: Phaser.Scene,
     object: ObjectTransform | object,
     config: Phaser.Types.Tweens.TweenBuilderConfig | object,
-    key: string,
+    key: string
   ) {
     const tweens = scene.tweens.getTweensOf(object as object);
     let tween: Phaser.Tweens.Tween;

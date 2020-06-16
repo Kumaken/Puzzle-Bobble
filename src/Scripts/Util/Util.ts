@@ -2,11 +2,9 @@ export const getResolution = () => {
   let w = 720;
   let h = 1200;
 
-
   if (isTargetDevice() !== -1) {
     w = window.innerWidth * window.devicePixelRatio;
     h = window.innerHeight * window.devicePixelRatio;
- 
   }
   return { width: w, height: h };
 };
@@ -45,6 +43,8 @@ export function isInApp(): boolean {
 }
 
 export const getUrlParams = () => {
-  const urlParams = new URLSearchParams(window.location.search.substring(1));
+  const urlParams: any = new URLSearchParams(
+    window.location.search.substring(1)
+  );
   return Object.fromEntries(urlParams);
 };

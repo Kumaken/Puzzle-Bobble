@@ -135,7 +135,7 @@ enum E_LEVEL_TYPE {
   //static ceiling
   STATIC = 1,
   //endless with random bubbles
-  ENDLESS = 2,
+  ENDLESS = 2
 }
 
 interface IPowerUp {
@@ -149,14 +149,12 @@ interface IRow {
   row: number[];
 }
 
-
 interface ILevelConfig {
   level_settings_time_limit: number;
 
   level_settings_level_type: number;
   level_settings_descend_delay: number;
   level_settings_points_to_star: number[];
- 
 
   level_settings_move_prompt_threshold: number[];
   //IPowerUp

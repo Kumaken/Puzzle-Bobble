@@ -84,21 +84,16 @@ class TextPopUpHelper {
     let text: Phaser.GameObjects.Text;
 
     if (typeof config.text === 'string') {
-      const style = { 
-        ...config.style, 
-        ...{ 
-          fontSize: `${config.style?.fontSize as number * scaleWidth}px`,
-          strokeThickness: (config.style?.strokeThickness as number) 
-            * scaleWidth
+      const style = {
+        ...config.style,
+        ...{
+          fontSize: `${(config.style?.fontSize as number) * scaleWidth}px`,
+          strokeThickness:
+            (config.style?.strokeThickness as number) * scaleWidth
         }
       };
-  
-      text = this.m_scene.add.text(
-        config.x, 
-        config.y, 
-        config.text, 
-        style
-      );
+
+      text = this.m_scene.add.text(config.x, config.y, config.text, style);
     } else {
       text = config.text;
     }
@@ -107,33 +102,34 @@ class TextPopUpHelper {
 
     let extraData;
     if (config.animType !== undefined) {
-      switch(config.animType as ANIMATION_TYPE) {
+      switch (config.animType as ANIMATION_TYPE) {
         case ANIMATION_TYPE.EASE_IN: {
           extraData = AnimationHelper.EaseInAndFade(
-            this.m_scene, 
-            text, 
+            this.m_scene,
+            text,
             config.duration
           );
           break;
         }
-        
+
         case ANIMATION_TYPE.EMBIGGEN: {
           extraData = AnimationHelper.Resize2(
-            this.m_scene, 
-            text, 
-            config.duration, 
-            { x: 0.5, y: 0.5 }, 
+            this.m_scene,
+            text,
+            config.duration,
+            { x: 0.5, y: 0.5 },
             { x: 1.0, y: 1.0 }
           );
           break;
         }
 
         case ANIMATION_TYPE.FLOAT_IN_FADE: {
-          extraData =  AnimationHelper.FloatInAndFade(
-            this.m_scene, 
-            text, 
-            config.duration, 
-            { x: 1.1, y: 1.1 }, { x: 1.0, y: 1.0 }
+          extraData = AnimationHelper.FloatInAndFade(
+            this.m_scene,
+            text,
+            config.duration,
+            { x: 1.1, y: 1.1 },
+            { x: 1.0, y: 1.0 }
           );
           break;
         }
@@ -147,18 +143,18 @@ class TextPopUpHelper {
           );
           break;
         }
-      }      
+      }
     }
 
     if (!config.retain) {
-      this.m_scene.time.delayedCall((config.duration) * 1000, () => {
+      this.m_scene.time.delayedCall(config.duration * 1000, () => {
         text.setVisible(false);
       });
       this.m_scene.time.delayedCall((config.duration + 1) * 1000, () => {
         text.destroy();
       });
-    } 
-    
+    }
+
     return { text, extraData };
   }
 }

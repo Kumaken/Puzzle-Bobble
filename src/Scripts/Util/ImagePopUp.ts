@@ -59,13 +59,11 @@ class ImagePopUpHelper {
    * @param color the image's tint (number e.g. 0xffffff)
    * @param easeIn does the image has ease in animation (boolean)
    */
-  showImage(
-    config: IImageConfig
-  ) {
+  showImage(config: IImageConfig) {
     if (!this.m_scene) {
       return undefined;
     }
-    
+
     // Image setup
     let image: Phaser.GameObjects.Image;
 
@@ -75,17 +73,19 @@ class ImagePopUpHelper {
       image = this.m_scene.add.image(0, 0, '');
     }
 
-    image?.setActive(true)
+    image
+      ?.setActive(true)
       .setVisible(true)
       .setOrigin(0.5, 0.5)
       .setAlpha(1)
       .clearTint();
 
-    image?.setTexture(config.image)
+    image
+      ?.setTexture(config.image)
       .setPosition(config.x, config.y)
       .setDisplaySize(
         config.width * AlignTool.getScaleScreenWidth(this.m_scene),
-        config.height * AlignTool.getScaleScreenWidth(this.m_scene),
+        config.height * AlignTool.getScaleScreenWidth(this.m_scene)
       );
 
     if (config.color) {
@@ -97,67 +97,64 @@ class ImagePopUpHelper {
     const extraImages: Array<Phaser.GameObjects.Image> = [];
     let extraData;
     if (config.animType !== undefined) {
-      switch(config.animType as ANIMATION_TYPE) {
+      switch (config.animType as ANIMATION_TYPE) {
         case ANIMATION_TYPE.EASE_IN: {
           extraData = AnimationHelper.EaseInAndFade(
-            this.m_scene, 
-            image, 
+            this.m_scene,
+            image,
             config.duration
           );
           break;
         }
-          
+
         case ANIMATION_TYPE.FLASH_AND_RESIZE: {
           extraData = AnimationHelper.FlashAndResize(
-            this.m_scene, 
-            image as Phaser.GameObjects.Image, 
-            config.duration, 
-            0xf5f3ce, 
-            { x: image.scaleX * 1.5, y: image.scaleY * 1.5 }, 
+            this.m_scene,
+            image as Phaser.GameObjects.Image,
+            config.duration,
+            0xf5f3ce,
+            { x: image.scaleX * 1.5, y: image.scaleY * 1.5 },
             { x: image.scaleX * 1, y: image.scaleY * 1 }
           );
           extraImages.push(extraData.flashData.flashObject);
           break;
         }
-        
+
         case ANIMATION_TYPE.EMBIGGEN: {
           extraData = AnimationHelper.Resize2(
-            this.m_scene, 
-            image, 
-            config.duration, 
-            { x: image.scaleX * 0.5, y: image.scaleY * 0.5 }, 
+            this.m_scene,
+            image,
+            config.duration,
+            { x: image.scaleX * 0.5, y: image.scaleY * 0.5 },
             { x: image.scaleX * 1.0, y: image.scaleY * 1.0 }
           );
           break;
         }
 
         case ANIMATION_TYPE.FLOAT_IN_FADE: {
-          extraData =  AnimationHelper.FloatInAndFade(
-            this.m_scene, 
-            image as Phaser.GameObjects.Image, 
-            config.duration, 
-            { x: image.scaleX * 1.0, y: image.scaleY * 1.0 }, 
+          extraData = AnimationHelper.FloatInAndFade(
+            this.m_scene,
+            image as Phaser.GameObjects.Image,
+            config.duration,
+            { x: image.scaleX * 1.0, y: image.scaleY * 1.0 },
             { x: image.scaleX * 1.2, y: image.scaleY * 1.2 }
           );
           break;
         }
-      }      
+      }
     }
 
     // Timer setup
     if (!config.retain) {
-      this.m_scene.time.delayedCall(
-        config.duration * 1000 + 1000,
-        () => {
-          image?.setActive(false).setVisible(false);
-          this.m_imagePool.push(image as Phaser.GameObjects.Image);
-          extraImages.forEach( (extraImage: Phaser.GameObjects.Image) => { 
-            extraImage.setActive(false).setVisible(false);
-            this.m_imagePool.push(extraImage);
-          });
-        },
-      );
-    } 
+      this.m_scene.time.delayedCall(config.duration * 1000 + 1000, () => {
+        image?.setActive(false).setVisible(false);
+        this.m_imagePool.push(image as Phaser.GameObjects.Image);
+        extraImages.forEach((extraImage: Phaser.GameObjects.Image) => {
+          extraImage.setActive(false).setVisible(false);
+          this.m_imagePool.push(extraImage);
+        });
+      });
+    }
 
     return { image, extraData };
   }
