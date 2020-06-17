@@ -10,16 +10,29 @@ export default class PreloadScene extends Phaser.Scene {
 
   preload(): void {
     /* all the routes here is referenced from root! */
-    this.load.image(TextureKeys.VirusRed, 'src/Assets/Bubbles/Ball_Red.png');
+    this.load.image(TextureKeys.BubbleRed, 'src/Assets/Bubbles/Ball_Red.png');
     this.load.image(
-      TextureKeys.VirusGreen,
+      TextureKeys.BubbleGreen,
       'src/Assets/Bubbles/Ball_Green.png'
     );
-    this.load.image(TextureKeys.VirusBlue, 'src/Assets/Bubbles/Ball_Blue.png');
+    this.load.image(TextureKeys.BubbleBlue, 'src/Assets/Bubbles/Ball_Blue.png');
     this.load.image(
-      TextureKeys.VirusYellow,
+      TextureKeys.BubbleYellow,
       'src/Assets/Bubbles/Ball_Yellow.png'
     );
+    this.load.image(
+      TextureKeys.BubblePurple,
+      'src/Assets/Bubbles/Ball_Purple.png'
+    );
+    this.load.image(
+      TextureKeys.BubbleWhite,
+      'src/Assets/Bubbles/Ball_White.png'
+    );
+    this.load.image(
+      TextureKeys.BubbleBlack,
+      'src/Assets/Bubbles/Ball_Black.png'
+    );
+
     this.game.events.once(
       GameEvents.PreloadFinished,
       this.handlePreloadFinished,
@@ -35,6 +48,6 @@ export default class PreloadScene extends Phaser.Scene {
     this.scene.stop(SceneKeys.Preload);
     console.log('preload finished');
 
-    this.scene.start(SceneKeys.TitleScreen);
+    this.scene.start(SceneKeys.GameUI);
   }
 }

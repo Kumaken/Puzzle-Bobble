@@ -1,11 +1,12 @@
 import 'phaser';
 
-import BubbleLayoutData, { Red, Gre, Blu, Yel } from './BubbleLayoutData';
+import BubbleLayoutData from './BubbleLayoutData';
 
 import BubbleColor, { colorIsMatch } from '../Config/BubbleColorConfig';
 import { Subject } from 'rxjs';
 import { IBubble } from '../Interfaces/IBubble';
 import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
+import BubbleColorConfig from '../Config/BubbleColorConfig';
 
 interface IGridPosition {
   row: number;
@@ -45,7 +46,7 @@ export default class BubbleGrid {
   }
 
   get bubbleInterval() {
-    return this.size.height * 0.8;
+    return this.size.height;
   }
 
   get bottom() {
@@ -234,7 +235,11 @@ export default class BubbleGrid {
     }
   }
 
-  generate(rows = 6) {
+  /**
+   * Initial generation of bubbles
+   * @param rows how many rows to generate max to hold the bubbles
+   */
+  generate(rows = 6): this {
     if (!this.layoutData) {
       return this;
     }
@@ -246,7 +251,7 @@ export default class BubbleGrid {
     return this;
   }
 
-  moveBy(dy: number) {
+  moveBy(dy: number): this {
     if (this.pool.countActive() === 0) {
       return this;
     }
@@ -264,19 +269,29 @@ export default class BubbleGrid {
     return this;
   }
 
-  spawnRow() {
+  /**
+   * Spawns bubble on one row. Contains algorithm on whether to place bubble on another row or this row.
+   * Returns row number
+   */
+  spawnRow(): number {
+    // if layout data is unavailable, terminate:
     if (!this.layoutData) {
       return -1;
     }
 
-    const row = this.layoutData.getNextRow();
+    let currRowIsStaggered;
+    if (this.grid.length <= 1) {
+      if (this.grid.length == 0) currRowIsStaggered = false;
+      else currRowIsStaggered = true;
+    } else currRowIsStaggered = !this.isRowStaggered(2);
+    const row = this.layoutData.getNextRow(currRowIsStaggered);
     const count = row.length;
 
     if (count <= 0) {
       return 0;
     }
 
-    this.addRowToFront(row);
+    this.addRowToFront(row, currRowIsStaggered);
 
     this.bubblesCount += count;
     this.bubblesAddedSubject.next(count);
@@ -284,7 +299,16 @@ export default class BubbleGrid {
     return row.length;
   }
 
-  private addRowToFront(row: string[]) {
+  // private isStaggered(): boolean {
+  //   if (this.grid.length <= 1) {
+  //     return true;
+  //   } else {
+  //     const rowList = this.grid[1] as RowList;
+  //     return !rowList.isStaggered;
+  //   }
+  // }
+
+  private addRowToFront(row: BubbleColorConfig[], isStaggered: boolean) {
     const middle = this.scene.scale.width * 0.5;
     const width = this.size.width;
     const radius = width * 0.5;
@@ -299,11 +323,9 @@ export default class BubbleGrid {
     let x = middle - halfCount * width + radius * 0.5;
     let y = 0;
 
-    if (this.grid.length <= 1) {
-      gridRow.isStaggered = true;
-    } else {
+    gridRow.isStaggered = isStaggered;
+    if (this.grid.length > 1) {
       const rowList = this.grid[1] as RowList;
-      gridRow.isStaggered = !rowList.isStaggered;
       const anyItem = rowList.find((n) => n);
       if (anyItem) {
         y = anyItem.y - verticalInterval;
@@ -320,33 +342,13 @@ export default class BubbleGrid {
       const b = this.pool.spawn(x, y);
       gridRow.push(b);
 
-      switch (colorCode) {
-        default:
-        case undefined:
-          break;
-
-        case Red:
-          b!.setColor(BubbleColor.Red);
-          break;
-
-        case Blu:
-          b!.setColor(BubbleColor.Blue);
-          break;
-
-        case Gre:
-          b!.setColor(BubbleColor.Green);
-          break;
-
-        case Yel:
-          b!.setColor(BubbleColor.Yellow);
-          break;
-      }
-
+      b!.setColor(colorCode);
       x += width;
     });
 
-    if (!gridRow.isStaggered) {
+    if (gridRow.isStaggered) {
       // pad end with space for offset
+      gridRow.pop();
       gridRow.push(undefined);
     }
   }

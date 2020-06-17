@@ -1,10 +1,13 @@
+// Mapped to initial default texture for every kind of bubble color
 enum BubbleColorConfig {
-  Red = 0xdb0b0b,
-  Blue = 0x0b6cdb,
-  Green = 0x0bdb23,
-  Yellow = 0xdbc60b,
-
-  Any = -1
+  Red = 'bubble-red',
+  Blue = 'bubble-blue',
+  Green = 'bubble-green',
+  Yellow = 'bubble-yellow',
+  White = 'bubble-purple',
+  Black = 'bubble-black',
+  Purple = 'bubble-purple',
+  Any = '-1'
 }
 
 const colorIsMatch = (

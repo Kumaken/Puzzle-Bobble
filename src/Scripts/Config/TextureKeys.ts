@@ -1,11 +1,14 @@
 enum TextureKeys {
   Background = 'background',
-  Virus = 'virus',
-  VirusRed = 'virus-red',
-  VirusGreen = 'virus-green',
-  VirusBlue = 'virus-blue',
-  VirusYellow = 'virus-yellow',
-  VirusParticles = 'virus-particles',
+  Bubble = 'bubble',
+  BubbleRed = 'bubble-red',
+  BubbleGreen = 'bubble-green',
+  BubbleBlue = 'bubble-blue',
+  BubbleYellow = 'bubble-yellow',
+  BubblePurple = 'bubble-purple',
+  BubbleWhite = 'bubble-white',
+  BubbleBlack = 'bubble-black',
+  BubbleParticles = 'bubble-particles',
   Shooter = 'shooter'
 }
 

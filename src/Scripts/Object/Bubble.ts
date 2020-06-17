@@ -2,19 +2,23 @@ import 'phaser';
 import BubbleColorConfig from '../Config/BubbleColorConfig';
 import { IBubble } from '../Interfaces/IBubble';
 import TextureKeys from '../Config/TextureKeys';
+import TitleScene from '../Scene/TitleScene';
 
 const ALL_COLORS = [
   BubbleColorConfig.Red,
   BubbleColorConfig.Blue,
   BubbleColorConfig.Green,
-  BubbleColorConfig.Yellow
+  BubbleColorConfig.Yellow,
+  BubbleColorConfig.White,
+  BubbleColorConfig.Black,
+  BubbleColorConfig.Purple
 ];
 
 export default class Bubble extends Phaser.Physics.Arcade.Sprite
   implements IBubble {
   private _color = BubbleColorConfig.Red;
 
-  get color(): number {
+  get color(): BubbleColorConfig {
     return this._color;
   }
 
@@ -34,8 +38,6 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     frame = ''
   ) {
     super(scene, x, y, texture, frame);
-    console.log('construct bubble:', this);
-    // this.setRandomColor();
   }
 
   setRandomColor(): this {
@@ -45,23 +47,7 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
 
   setColor(color: BubbleColorConfig): this {
     this._color = color;
-    switch (color) {
-      case BubbleColorConfig.Red:
-        this.setTexture(TextureKeys.VirusRed);
-        break;
-
-      case BubbleColorConfig.Green:
-        this.setTexture(TextureKeys.VirusGreen);
-        break;
-
-      case BubbleColorConfig.Blue:
-        this.setTexture(TextureKeys.VirusBlue);
-        break;
-
-      case BubbleColorConfig.Yellow:
-        this.setTexture(TextureKeys.VirusYellow);
-        break;
-    }
+    this.setTexture(color);
 
     return this;
   }
