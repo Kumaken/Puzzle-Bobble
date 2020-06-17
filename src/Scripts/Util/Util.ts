@@ -1,12 +1,10 @@
-export const getResolution = () => {
+export const getResolution = (): { width: number; height: number } => {
   let w = 720;
   let h = 1200;
-
 
   if (isTargetDevice() !== -1) {
     w = window.innerWidth * window.devicePixelRatio;
     h = window.innerHeight * window.devicePixelRatio;
- 
   }
   return { width: w, height: h };
 };
@@ -14,21 +12,21 @@ export const getResolution = () => {
 /**
  * Is not mobile return -1
  */
-export const isMobile = () => {
+export const isMobile = (): number => {
   return navigator.userAgent.indexOf('Mobile');
 };
 
 /**
  * Is not tablet return -1
  */
-export const isTablet = () => {
+export const isTablet = (): number => {
   return navigator.userAgent.indexOf('Tablet');
 };
 
 /**
  * Is not target device return -1
  */
-export const isTargetDevice = () => {
+export const isTargetDevice = (): number => {
   const mobile = isMobile();
   return mobile !== -1 ? mobile : isTablet();
 };
@@ -44,7 +42,10 @@ export function isInApp(): boolean {
   );
 }
 
-export const getUrlParams = () => {
-  const urlParams = new URLSearchParams(window.location.search.substring(1));
+export const getUrlParams = (): unknown => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const urlParams: any = new URLSearchParams(
+    window.location.search.substring(1)
+  );
   return Object.fromEntries(urlParams);
 };

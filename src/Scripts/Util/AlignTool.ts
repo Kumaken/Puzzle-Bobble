@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable no-param-reassign */
 import 'phaser';
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from './Constant';
 
-type ObjectTransform = Phaser.GameObjects.GameObject &
-  Phaser.GameObjects.Components.Transform &
-  Phaser.GameObjects.Components.Size |
-  Phaser.GameObjects.Arc |
-  Phaser.GameObjects.Container;
+type ObjectTransform =
+  | (Phaser.GameObjects.GameObject &
+      Phaser.GameObjects.Components.Transform &
+      Phaser.GameObjects.Components.Size)
+  | Phaser.GameObjects.Arc
+  | Phaser.GameObjects.Container;
 
 export default class AlignTool {
   /**
@@ -15,9 +17,11 @@ export default class AlignTool {
    * @param object target object to align
    * @param percentage percentage of screen width
    */
-  static scaleToScreenWidth(scene: Phaser.Scene, obj: ObjectTransform, 
-    percentage: number) {
-    
+  static scaleToScreenWidth(
+    scene: Phaser.Scene,
+    obj: ObjectTransform,
+    percentage: number
+  ) {
     obj.displayWidth = scene.cameras.main.width * percentage;
     obj.scaleY = obj.scaleX;
   }
@@ -31,7 +35,7 @@ export default class AlignTool {
   static scaleToScreenHeight(
     scene: Phaser.Scene,
     obj: ObjectTransform,
-    percentage: number,
+    percentage: number
   ) {
     obj.displayHeight = scene.cameras.main.height * percentage;
     obj.scaleX = obj.scaleY;
@@ -141,7 +145,7 @@ export default class AlignTool {
     const { width, height } = scene.cameras.main;
     return {
       scaleWidth: width / DEFAULT_WIDTH,
-      scaleHeight: height / DEFAULT_HEIGHT,
+      scaleHeight: height / DEFAULT_HEIGHT
     };
   }
 }

@@ -1,14 +1,13 @@
-import * as Phaser from "phaser";
-import FpsText from "../Object/FpsText";
+import * as Phaser from 'phaser';
+import FpsText from '../Object/FpsText';
+import SceneKeys from '../Config/SceneKeys';
 
 export default class LevelScene extends Phaser.Scene {
   private fpsText: FpsText;
 
   constructor() {
-    super({ key: "LevelScene" });
+    super({ key: SceneKeys.GameUI });
   }
-
-  preload(): void {}
 
   create(): void {
     this.fpsText = new FpsText(this);

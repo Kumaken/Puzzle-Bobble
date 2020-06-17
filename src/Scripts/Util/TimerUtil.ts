@@ -1,7 +1,7 @@
 export enum DISPLAY_MODE {
   SECOND = 0,
   MINUTE = 1,
-  HOUR = 2,
+  HOUR = 2
 }
 
 export default class TimerUtil {
@@ -14,7 +14,7 @@ export default class TimerUtil {
    */
   static convertTime(
     ptime: number,
-    mode: DISPLAY_MODE = DISPLAY_MODE.SECOND,
+    mode: DISPLAY_MODE = DISPLAY_MODE.SECOND
   ): string {
     let text = '';
     let time = ptime;

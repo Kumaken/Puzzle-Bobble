@@ -10,12 +10,7 @@ class Tint {
     return instance;
   }
 
-  public tint(
-    scene: Phaser.Scene,
-    alpha = 0.5,
-    color = 0x000000,
-    depth = 1,
-  ) {
+  public tint(scene: Phaser.Scene, alpha = 0.5, color = 0x000000, depth = 1) {
     if (this.tintPanel === undefined) {
       this.tintPanel = scene.add.rectangle(
         AlignTool.getCenterHorizontal(scene),
@@ -23,7 +18,7 @@ class Tint {
         scene.cameras.main.width,
         scene.cameras.main.height,
         color,
-        alpha,
+        alpha
       );
     } else {
       this.tintPanel.setVisible(true);
