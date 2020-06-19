@@ -1,12 +1,12 @@
-import BubbleColorConfig from '../Config/BubbleColorConfig';
+import ColorConfig from '../Config/ColorConfig';
 
 interface IBubble extends Phaser.Physics.Arcade.Sprite {
-  readonly color: BubbleColorConfig;
+  readonly color: number;
   readonly radius: number;
   readonly physicsRadius: number;
 
   setRandomColor(): IBubble;
-  setColor(color: BubbleColorConfig): IBubble;
+  setColor(color: number): IBubble;
   useCircleCollider(): IBubble;
   launch(direction: Phaser.Math.Vector2): void;
 }

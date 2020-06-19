@@ -1,6 +1,7 @@
 import { IBubblePool } from '../Interfaces/IBubblePool';
 import { IBubble } from '../Interfaces/IBubble';
 import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
+import { IShooter } from '../Interfaces/IShooter';
 
 declare module 'phaser' {
   namespace GameObjects {
@@ -20,6 +21,8 @@ declare module 'phaser' {
           | Phaser.Types.Physics.Arcade.PhysicsGroupConfig
           | Phaser.Types.GameObjects.Group.GroupCreateConfig
       ): IStaticBubblePool;
+
+      shooter(x: number, y: number, texture: string): IShooter;
     }
   }
 }

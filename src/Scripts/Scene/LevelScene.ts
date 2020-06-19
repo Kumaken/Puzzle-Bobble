@@ -3,23 +3,30 @@ import FpsText from '../Object/FpsText';
 import SceneKeys from '../Config/SceneKeys';
 
 import '../Object/StaticBubblePool';
+import '../Object/BubblePool';
+import '../Object/Shooter';
 import BubbleGrid from '../Object/BubbleGrid';
 import BubbleSpawnModel from '../Object/BubbleSpawnModel';
 import { IBubbleSpawnModel } from '../Interfaces/IBubbleSpawnModel';
 import TextureKeys from '../Config/TextureKeys';
 import BubbleLayoutData from '../Object/BubbleLayoutData';
 import { IBubble } from '../Interfaces/IBubble';
+import { IShooter } from '../Interfaces/IShooter';
+import ShotGuide from '../Object/guides/ShotGuide';
 
 enum GameState {
   Playing,
   GameOver,
   GameWin
 }
+const DPR = window.devicePixelRatio;
+
 export default class LevelScene extends Phaser.Scene {
   private fpsText: FpsText;
   private grid?: BubbleGrid;
   private state;
   private bubbleSpawnModel!: IBubbleSpawnModel;
+  private shooter?: IShooter;
 
   constructor() {
     super({ key: SceneKeys.GameUI });
@@ -46,7 +53,44 @@ export default class LevelScene extends Phaser.Scene {
       .setLayoutData(new BubbleLayoutData(this.bubbleSpawnModel))
       .generate();
 
-    this.grid.moveBy(1000);
+    // Shooter:
+    this.shooter = this.add.shooter(width * 0.5, height + 30 * DPR, '');
+    this.shooter.setGuide(new ShotGuide(this));
+
+    // Shooter Bubble Pool:
+    const bubblePool = this.add.bubblePool(TextureKeys.BubbleBlack);
+    this.shooter.setBubblePool(bubblePool);
+    this.shooter.attachBubble();
+
+    // Collider Setup:
+    this.physics.add.collider(
+      bubblePool,
+      staticBubblePool,
+      this.handleBubbleHitGrid,
+      this.processBubbleHitGrid,
+      this
+    );
+
+    // Starting grid position:
+    this.grid.moveBy(400);
+
+    const bubbleSub = this.grid
+      .onBubbleWillBeDestroyed()
+      .subscribe((bubble) => {
+        this.handleBubbleWillBeDestroyed(bubble);
+      });
+
+    this.scene.run(SceneKeys.GameUI, {
+      bubblesDestroyed: this.grid.onBubblesDestroyed(),
+      bubblesAdded: this.grid.onBubblesAdded(),
+      infectionsChanged: this.bubbleSpawnModel.onPopulationChanged()
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      bubbleSub.unsubscribe();
+
+      this.handleShutdown();
+    });
   }
 
   update(t: number, dt: number): void {
@@ -56,6 +100,32 @@ export default class LevelScene extends Phaser.Scene {
       return;
     }
     this.bubbleSpawnModel.update(dt);
+    this.shooter.update(dt);
+  }
+
+  private handleBubbleWillBeDestroyed(bubble: IBubble) {
+    const x = bubble.x;
+    const y = bubble.y;
+
+    // explosion then go to gameover
+    const particles = this.add.particles(TextureKeys.BubblePop);
+    particles.setDepth(2000);
+    particles
+      .createEmitter({
+        speed: { min: -200, max: 200 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.3, end: 0 },
+        blendMode: Phaser.BlendModes.ADD,
+        tint: bubble.color,
+        lifespan: 300
+      })
+      .explode(50, x, y);
+  }
+
+  private handleShutdown() {
+    this.scene.stop(SceneKeys.GameUI);
+
+    this.grid?.destroy();
   }
 
   private processBubbleHitGrid(
@@ -106,6 +176,13 @@ export default class LevelScene extends Phaser.Scene {
     const x = gx + directionToGrid.x * gb.width;
     const y = gy + directionToGrid.y * gb.width;
 
+    this.shooter?.returnBubble(b);
+
+    // this.descentController?.hold()
+
+    //await this.descentController?.reversing()
+
     await this.grid?.attachBubble(x, y, color, gb, vx, vy);
+    this.shooter?.attachBubble();
   }
 }

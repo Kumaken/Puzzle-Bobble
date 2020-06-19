@@ -32,6 +32,9 @@ export default class PreloadScene extends Phaser.Scene {
       TextureKeys.BubbleBlack,
       'src/Assets/Bubbles/Ball_Black.png'
     );
+    this.load.image(TextureKeys.BubblePop, 'src/Assets/Bubbles/Bubble_Pop.png');
+
+    this.load.image(TextureKeys.Shooter, 'src/Assets/Shooters/shooter.png');
 
     this.game.events.once(
       GameEvents.PreloadFinished,

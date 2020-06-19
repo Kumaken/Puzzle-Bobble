@@ -1,14 +1,14 @@
 import { IBubbleSpawnModel } from '../Interfaces/IBubbleSpawnModel';
-import BubbleColorConfig from '../Config/BubbleColorConfig';
+import ColorConfig from '../Config/ColorConfig';
 
 const ALL_COLORS = [
-  BubbleColorConfig.Red,
-  BubbleColorConfig.Blue,
-  BubbleColorConfig.Green,
-  BubbleColorConfig.Yellow,
-  BubbleColorConfig.White,
-  BubbleColorConfig.Black,
-  BubbleColorConfig.Purple
+  ColorConfig.Red,
+  ColorConfig.Blue,
+  ColorConfig.Green,
+  ColorConfig.Yellow,
+  ColorConfig.White,
+  ColorConfig.Black,
+  ColorConfig.Purple
 ];
 
 export default class BubbleLayoutData {
@@ -20,14 +20,14 @@ export default class BubbleLayoutData {
     this.bubblesPerRow = 10;
   }
 
-  getNextRow(isRowStaggered: boolean): BubbleColorConfig[] {
+  getNextRow(isRowStaggered: boolean): ColorConfig[] {
     let bubblePerRow = this.bubblesPerRow;
     if (isRowStaggered) bubblePerRow -= 1;
     const count = this.growthModel.getNext(bubblePerRow);
 
     // TODO: potentially randomize positions when less than 6 available
 
-    const ret: BubbleColorConfig[] = [];
+    const ret: ColorConfig[] = [];
     for (let i = 0; i < count; ++i) {
       ret.push(this.getRandomColor());
     }
