@@ -27,7 +27,7 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
 
   // Collider radius is slightly wider than actual bubble radius
   get physicsRadius(): number {
-    return this.radius * 1;
+    return this.radius * 0.8;
   }
 
   constructor(
@@ -55,6 +55,7 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     const colliderRadius = this.physicsRadius;
     const diff = radius - colliderRadius; // for collider offset
     return this.setCircle(colliderRadius, diff, diff);
+    // return this.setCircle(1000, -1000, -100);
   }
 
   launch(direction: Phaser.Math.Vector2, speed = 2500): void {
@@ -64,6 +65,10 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     this.body.y = this.y;
     this.body.enable = true;
     this.setVelocity(direction.x * speed, direction.y * speed);
+  }
+
+  stop(): void {
+    this.setVelocity(0);
   }
 
   public moveBubble(x: number, y: number): void {

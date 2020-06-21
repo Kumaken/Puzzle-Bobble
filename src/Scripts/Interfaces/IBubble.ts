@@ -1,5 +1,3 @@
-import ColorConfig from '../Config/ColorConfig';
-
 interface IBubble extends Phaser.Physics.Arcade.Sprite {
   readonly color: number;
   readonly radius: number;
@@ -9,6 +7,7 @@ interface IBubble extends Phaser.Physics.Arcade.Sprite {
   setColor(color: number): IBubble;
   useCircleCollider(): IBubble;
   launch(direction: Phaser.Math.Vector2): void;
+  stop(): void;
 }
 
 export { IBubble };

@@ -27,6 +27,7 @@ export default class LevelScene extends Phaser.Scene {
   private state;
   private bubbleSpawnModel!: IBubbleSpawnModel;
   private shooter?: IShooter;
+  private inCollision: boolean;
 
   constructor() {
     super({ key: SceneKeys.GameUI });
@@ -44,7 +45,7 @@ export default class LevelScene extends Phaser.Scene {
     const height = this.scale.height;
     console.log('width, height:', width, height);
     this.physics.world.setBounds(0, 0, width, height);
-    this.physics.world.setBoundsCollision(true, true, false, false);
+    this.physics.world.setBoundsCollision(true, true, true, true);
 
     const staticBubblePool = this.add.staticBubblePool(TextureKeys.BubbleBlack);
 
@@ -67,9 +68,10 @@ export default class LevelScene extends Phaser.Scene {
       bubblePool,
       staticBubblePool,
       this.handleBubbleHitGrid,
-      this.processBubbleHitGrid,
+      null,
       this
     );
+    this.inCollision = false;
 
     // Starting grid position:
     this.grid.moveBy(400);
@@ -128,13 +130,18 @@ export default class LevelScene extends Phaser.Scene {
     this.grid?.destroy();
   }
 
-  private processBubbleHitGrid(
+  // private delay(ms: number) {
+  //   return new Promise((resolve) => setTimeout(resolve, ms));
+  // }
+
+  private async processBubbleHitGrid(
     bubble: Phaser.GameObjects.GameObject,
     gridBubble: Phaser.GameObjects.GameObject
   ) {
     // only accept collision if distance is close enough
     // gives a better feel for tight shots
     const b = bubble as IBubble;
+    b.stop();
     const gb = gridBubble as IBubble;
 
     const active = b.active && gb.active;
@@ -151,38 +158,48 @@ export default class LevelScene extends Phaser.Scene {
   }
 
   private async handleBubbleHitGrid(
-    bubble: Phaser.GameObjects.GameObject,
+    bubble: IBubble,
     gridBubble: Phaser.GameObjects.GameObject
   ) {
     const b = bubble as IBubble;
     const bx = b.x;
-    const by = b.y;
-    const color = b.color;
 
-    const vx = b.body.deltaX();
-    const vy = b.body.deltaY();
+    if (!this.inCollision && bx !== 0) {
+      // prevent multiple chain collision and collision when resetting ball on 0,0 position
+      this.inCollision = true;
+      console.log('collide');
+      b.stop();
+      const color = b.color;
+      const by = b.y;
+      const gb = gridBubble as IBubble;
+      const gx = gb.x;
+      const gy = gb.y;
 
-    const gb = gridBubble as IBubble;
-    const gx = gb.x;
-    const gy = gb.y;
+      const vx = b.body.deltaX();
+      const vy = b.body.deltaY();
 
-    // determine direction from bubble to grid
-    // then negate it to have opposite direction
-    const directionToGrid = new Phaser.Math.Vector2(gx - bx, gy - by)
-      .normalize()
-      .negate();
+      // determine direction from bubble to grid
+      // then negate it to have opposite direction
+      const directionToGrid = new Phaser.Math.Vector2(gx - bx, gy - by)
+        .normalize()
+        .negate();
 
-    // get where the bubble would be at contact with grid
-    const x = gx + directionToGrid.x * gb.width;
-    const y = gy + directionToGrid.y * gb.width;
+      // get where the bubble would be at contact with grid
+      const x = gx + directionToGrid.x * gb.width;
+      const y = gy + directionToGrid.y * gb.width;
+      console.log('bx,by:', bx, by);
+      console.log('gx,gy:', gx, gy);
+      console.log('final x,y:', x, y);
+      this.shooter?.returnBubble(b);
 
-    this.shooter?.returnBubble(b);
+      // this.descentController?.hold()
 
-    // this.descentController?.hold()
+      //await this.descentController?.reversing()
 
-    //await this.descentController?.reversing()
-
-    await this.grid?.attachBubble(x, y, color, gb, vx, vy);
-    this.shooter?.attachBubble();
+      await this.grid?.attachBubble(x, y, color, gb, vx, vy);
+      await this.shooter?.attachBubble();
+      this.inCollision = false;
+      console.log('Done handling collision');
+    }
   }
 }

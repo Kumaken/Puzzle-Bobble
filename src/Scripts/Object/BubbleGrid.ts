@@ -123,6 +123,7 @@ export default class BubbleGrid {
    * @param bvx x velocity of bubble at collision
    * @param bvy y velocity of bubble at collision
    */
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async attachBubble(
     x: number,
     y: number,
@@ -160,9 +161,8 @@ export default class BubbleGrid {
       tx = dx <= 0 ? tx - radius : tx + radius;
     }
 
-    const newBubble = this.pool.spawn(x, y).setColor(color);
-
     const { row, col } = this.findRowAndColumns(gridBubble);
+    console.log('findRowAndColumns:', row, col);
 
     let bRow = -1;
     if (sameRow) {
@@ -176,20 +176,42 @@ export default class BubbleGrid {
     }
 
     let bCol = -1;
-
+    const isLeft = tx < cellX;
     if (sameRow) {
-      bCol = tx < cellX ? col - 1 : col + 1;
+      bCol = isLeft ? col - 1 : col + 1;
     } else {
       const isStaggered = this.isRowStaggered(bRow);
       if (isStaggered) {
-        bCol = tx < cellX ? col : col + 1;
+        bCol = isLeft ? col : col + 1;
       } else {
-        bCol = tx < cellX ? col - 1 : col;
+        bCol = isLeft ? col - 1 : col;
       }
     }
 
-    this.insertAt(bRow, bCol, newBubble);
+    console.log('initialres:', bRow, bCol);
 
+    // handle if destinated position already contains a bubble:
+    if (this.getAt(bRow, bCol)) {
+      if (!sameRow) {
+        if (hx < cellX) {
+          bCol -= 1;
+        } else {
+          bCol += 1;
+        }
+      } else {
+        // same row handling:
+        if (ty < cellY) {
+          bRow = row - 1;
+        } else {
+          bRow = row + 1;
+        }
+      }
+    }
+    // console.log('sameRow', sameRow);
+    console.log('finalPosInsertion:', bRow, bCol);
+    const newBubble = this.pool.spawn(x, y).setColor(color);
+    this.insertAt(bRow, bCol, newBubble);
+    console.table(this.grid);
     const matches = this.findMatchesAt(bRow, bCol, color as number);
     // minimum 3 matches required
     if (matches.length < 3) {
@@ -244,6 +266,7 @@ export default class BubbleGrid {
     if (orphans.length > 0) {
       await this.animateOrphans(orphans);
     }
+    console.log('DONE ATTACH BUBBLE -------------');
   }
 
   /**
@@ -461,6 +484,7 @@ export default class BubbleGrid {
       const row = this.grid[i];
       const colIdx = row.findIndex((b) => b === bubble);
       if (colIdx < 0) {
+        // not found in this row
         continue;
       }
 
@@ -477,7 +501,9 @@ export default class BubbleGrid {
   }
 
   private insertAt(row: number, col: number, bubble: IBubble) {
+    console.log('row,grid.length', row, this.grid.length);
     if (row >= this.grid.length) {
+      console.log('insertAt-row >= this.grid.length');
       const count = row - (this.grid.length - 1);
       for (let i = 0; i < count; ++i) {
         const rowList = new RowList();
@@ -495,6 +521,7 @@ export default class BubbleGrid {
     }
 
     rowList[col] = bubble;
+    console.log('inserting:', rowList, 'at', row, col);
   }
 
   private getAt(row: number, col: number) {

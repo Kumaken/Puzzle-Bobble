@@ -87,6 +87,7 @@ export default class Shooter extends Phaser.GameObjects.Container
 
     this.bubble = bubble;
     this.bubble.disableBody();
+    console.log('body disabled');
 
     const vec = new Phaser.Math.Vector2(0, 0);
     vec.setToPolar(this.rotation + HALF_PI);
@@ -104,6 +105,7 @@ export default class Shooter extends Phaser.GameObjects.Container
       ease: 'Bounce.easeOut',
       duration: 300
     });
+    console.log('shooter attach done');
   }
 
   returnBubble(bubble: IBubble) {

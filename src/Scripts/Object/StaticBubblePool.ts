@@ -53,8 +53,7 @@ export default class StaticBubblePool extends Phaser.Physics.Arcade.StaticGroup
       bubble.setRandomColor();
     }
 
-    const body = bubble.body as Phaser.Physics.Arcade.StaticBody;
-    body.updateFromGameObject();
+    (bubble.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
 
     return bubble;
   }
