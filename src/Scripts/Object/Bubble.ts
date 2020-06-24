@@ -17,6 +17,13 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
   implements IBubble {
   private _color: number = ColorConfig.Red;
 
+  get _x(): number {
+    return this.x;
+  }
+  get _y(): number {
+    return this.y;
+  }
+
   get color(): number {
     return this._color;
   }

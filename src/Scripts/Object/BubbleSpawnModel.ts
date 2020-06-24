@@ -34,45 +34,27 @@ export default class BubbleSpawnModel implements IBubbleSpawnModel {
   }
 
   update(dt: number) {
-    if (this.populationCount <= 0) {
-      return;
-    }
-
-    this.accumulatedTime += dt;
-
-    const rate = this.getBubbleSpawnRate();
-
-    if (this.accumulatedTime < rate) {
-      return;
-    }
-
+    //   if (this.populationCount <= 0) {
+    //     return;
+    //   }
+    //   this.accumulatedTime += dt;
+    //   const rate = this.getBubbleSpawnRate();
+    //   if (this.accumulatedTime < rate) {
+    //     return;
+    //   }
+    // Descend!
     // increase by 10% of population
-    const increase = Math.floor(this.populationCount * 0.1);
-
-    this.increasePopulation(increase);
-
-    this.accumulatedTime = this.accumulatedTime - rate;
+    // const increase = Math.floor(this.populationCount * 0.1);
+    // this.increasePopulation(increase);
+    // this.accumulatedTime = this.accumulatedTime - rate;
   }
 
-  private getBubbleSpawnRate() {
-    if (this.populationCount < 1000) {
-      return 1000;
-    }
-
-    if (this.populationCount < 5000) {
+  public static getBubbleSpawnRate(level: number) {
+    if (level <= 2) {
       return 2000;
     }
-
-    if (this.populationCount < 10000) {
+    if (level <= 5) {
       return 3000;
-    }
-
-    if (this.populationCount < 50000) {
-      return 3500;
-    }
-
-    if (this.populationCount < 100000) {
-      return 5000;
     }
 
     return 5500;

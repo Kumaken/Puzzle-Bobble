@@ -7,6 +7,7 @@ import { Subject, Observable } from 'rxjs';
 import { IBubble } from '../Interfaces/IBubble';
 import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
 import ColorConfig from '../Config/ColorConfig';
+import TextureKeys from '../Config/TextureKeys';
 
 interface IGridPosition {
   row: number;
@@ -35,6 +36,16 @@ export default class BubbleGrid {
   private orphanWillBeDestroyed = new Subject<IBubble>();
   private bubblesAddedSubject = new Subject<number>();
   private bubbleAttachedSubject = new Subject<IBubble>();
+
+  private midPoint: number;
+  private bubblesPerRow: number;
+  public gridWidth: number;
+  public gridHeight: number;
+  public gridX: number;
+  public gridY: number;
+  public effGridY: number;
+
+  private borderWidth = 22;
 
   /**
    * Gets total active bubbles in the game
@@ -74,13 +85,56 @@ export default class BubbleGrid {
     return bubble.y + bubble.radius;
   }
 
-  constructor(scene: Phaser.Scene, pool: IStaticBubblePool) {
+  constructor(
+    scene: Phaser.Scene,
+    pool: IStaticBubblePool,
+    bubblesPerRow: number
+  ) {
     this.scene = scene;
     this.pool = pool;
-
+    this.bubblesPerRow = bubblesPerRow;
     const sample = this.pool.spawn(0, 0);
     this.size = new Phaser.Structs.Size(sample.width, sample.height);
     this.pool.despawn(sample);
+
+    this.midPoint = this.scene.scale.width * 0.5 + this.size.width * 0.2;
+    this.gridHeight = this.scene.scale.height * 2;
+
+    // Calculate how wide is the bubble grid:
+    this.gridWidth = this.size.width * this.bubblesPerRow;
+    this.gridX =
+      this.midPoint -
+      this.bubblesPerRow * 0.5 * this.size.width -
+      this.size.width * 0.5;
+    this.gridY = 0;
+    // spawn border:
+    scene.add.tileSprite(
+      this.gridX,
+      this.gridY,
+      this.borderWidth,
+      this.gridHeight,
+      TextureKeys.LeftBorder
+    );
+    const rightX =
+      this.gridX + this.size.width * bubblesPerRow + this.size.width * 0.5;
+    scene.add.tileSprite(
+      rightX,
+      this.gridY,
+      this.borderWidth,
+      this.gridHeight,
+      TextureKeys.RightBorder
+    );
+    const topBorderIMG = scene.textures
+      .get(TextureKeys.TopBorder)
+      .getSourceImage();
+    scene.add.tileSprite(
+      (this.gridX + rightX) / 2,
+      this.gridY + topBorderIMG.height,
+      this.gridWidth,
+      topBorderIMG.height * 2,
+      TextureKeys.TopBorder
+    );
+    this.effGridY = this.gridY + topBorderIMG.height * 2;
   }
 
   destroy(): void {
@@ -175,40 +229,48 @@ export default class BubbleGrid {
       }
     }
 
-    let bCol = -1;
+    let bCol: number = col;
     const isLeft = tx < cellX;
     if (sameRow) {
-      bCol = isLeft ? col - 1 : col + 1;
+      if (isLeft)
+        if (bCol !== 0) bCol -= 1;
+        else bCol += 1;
     } else {
       const isStaggered = this.isRowStaggered(bRow);
       if (isStaggered) {
         bCol = isLeft ? col : col + 1;
       } else {
-        bCol = isLeft ? col - 1 : col;
+        if (isLeft) if (bCol !== 0) bCol -= 1;
       }
     }
 
-    console.log('initialres:', bRow, bCol);
+    // console.lo('initialres:', bRow, bCol);
 
     // handle if destinated position already contains a bubble:
-    if (this.getAt(bRow, bCol)) {
-      if (!sameRow) {
-        if (hx < cellX) {
-          bCol -= 1;
-        } else {
-          bCol += 1;
-        }
-      } else {
-        // same row handling:
-        if (ty < cellY) {
-          bRow = row - 1;
-        } else {
-          bRow = row + 1;
-        }
-      }
+    // if (this.getAt(bRow, bCol)) {
+    //   if (!sameRow) {
+    //     if (hx < cellX) {
+    //       bCol -= 1;
+    //     } else {
+    //       bCol += 1;
+    //     }
+    //   } else {
+    //     // same row handling:
+    //     if (ty < cellY) {
+    //       bRow = row - 1;
+    //     } else {
+    //       bRow = row + 1;
+    //     }
+    //   }
+    // }
+    // if (tx > this.scale.width) tx = this.scale.width;
+    console.log('before', x, y, tx, ty);
+    if (tx < this.grid[1][0].x) {
+      if (this.isRowStaggered(bRow)) tx = this.grid[0][1].x;
+      else tx = this.grid[1][0].x;
     }
-    // console.log('sameRow', sameRow);
-    console.log('finalPosInsertion:', bRow, bCol);
+    // if (ty > this.scale.height) ty = this.scale.height;
+    console.log('after', x, y, tx, ty);
     const newBubble = this.pool.spawn(x, y).setColor(color);
     this.insertAt(bRow, bCol, newBubble);
     console.table(this.grid);
@@ -266,7 +328,8 @@ export default class BubbleGrid {
     if (orphans.length > 0) {
       await this.animateOrphans(orphans);
     }
-    console.log('DONE ATTACH BUBBLE -------------');
+
+    // console.lo('DONE ATTACH BUBBLE -------------');
   }
 
   /**
@@ -335,7 +398,6 @@ export default class BubbleGrid {
   }
 
   private addRowToFront(row: ColorConfig[], isStaggered: boolean) {
-    const middle = this.scene.scale.width * 0.5;
     const width = this.size.width;
     const radius = width * 0.5;
     const verticalInterval = this.bubbleInterval;
@@ -346,7 +408,7 @@ export default class BubbleGrid {
     this.grid.unshift(gridRow);
 
     const halfCount = count * 0.5;
-    let x = middle - halfCount * width + radius * 0.5;
+    let x = this.midPoint - halfCount * width + radius * 0.5;
     let y = 0;
 
     gridRow.isStaggered = isStaggered;
@@ -372,7 +434,7 @@ export default class BubbleGrid {
         b?.setColor(colorCode as number);
         x += width;
       } else {
-        console.log(colorCode);
+        // console.lo(colorCode);
       }
     });
 
@@ -478,7 +540,8 @@ export default class BubbleGrid {
    * Find the row of a bubble
    */
   private findRowAndColumns(bubble: IBubble) {
-    // search from the bottom of the grid
+    // HEURISTIC: search from the bottom of the grid (more likely to find match early on)
+    console.log(bubble);
     const size = this.grid.length;
     for (let i = size - 1; i >= 0; --i) {
       const row = this.grid[i];
@@ -501,9 +564,7 @@ export default class BubbleGrid {
   }
 
   private insertAt(row: number, col: number, bubble: IBubble) {
-    console.log('row,grid.length', row, this.grid.length);
     if (row >= this.grid.length) {
-      console.log('insertAt-row >= this.grid.length');
       const count = row - (this.grid.length - 1);
       for (let i = 0; i < count; ++i) {
         const rowList = new RowList();

@@ -1,4 +1,4 @@
-import * as Phaser from 'phaser';
+import 'phaser';
 
 import { Subject } from 'rxjs';
 import TextureKeys from '../Config/TextureKeys';
@@ -9,29 +9,35 @@ import { IShotGuide } from '../Interfaces/IShotGuide';
 import ColorConfig from '../Config/ColorConfig';
 
 const DPR = window.devicePixelRatio;
-const RADIUS = 100 * DPR;
+const RADIUS = 0 * DPR;
 
 const HALF_PI = Math.PI * 0.5;
-const GAP = 5 * DPR;
+const GAP = 0;
 
 export default class Shooter extends Phaser.GameObjects.Container
   implements IShooter {
   private bubble?: IBubble;
   private bubblePool?: IBubblePool;
   private shotGuide?: IShotGuide;
-
+  private _height: number;
   private shootSubject = new Subject<IBubble>();
+  private nextBubble: IBubble;
 
   get radius(): number {
     return RADIUS;
   }
 
+  get shooterHeight(): number {
+    return this._height;
+  }
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y);
-    console.log('shooter constructed!');
-    const base = scene.add.image(0, 0, TextureKeys.Shooter);
-
+    const base = scene.add.image(0, 0, texture);
+    this._height = base.height;
     this.add(base);
+
+    console.log('shooter constructed!', this._height);
 
     scene.input.addListener(
       Phaser.Input.Events.POINTER_DOWN,
@@ -46,6 +52,7 @@ export default class Shooter extends Phaser.GameObjects.Container
   }
 
   preDestroy() {
+    // console.log('preDestroy called');
     this.scene.input.removeListener(
       Phaser.Input.Events.POINTER_DOWN,
       this.handlePointerDown,
@@ -77,17 +84,28 @@ export default class Shooter extends Phaser.GameObjects.Container
       return;
     }
 
-    if (!bubble && this.bubble) {
-      return;
-    }
-
     if (!bubble) {
       bubble = this.bubblePool.spawn(0, 0);
     }
 
-    this.bubble = bubble;
+    bubble.disableBody();
+    bubble.scale = 0;
+    bubble.x = this.x + 220;
+    bubble.y = this.y + 95;
+
+    this.nextBubble = bubble;
+    this.scene.add.tween({
+      targets: this.nextBubble,
+      scale: 1,
+      ease: 'Bounce.easeOut',
+      duration: 500
+    });
+  }
+
+  attachNextBubble() {
+    if (!this.nextBubble) return;
+    this.bubble = this.nextBubble;
     this.bubble.disableBody();
-    console.log('body disabled');
 
     const vec = new Phaser.Math.Vector2(0, 0);
     vec.setToPolar(this.rotation + HALF_PI);
@@ -103,9 +121,8 @@ export default class Shooter extends Phaser.GameObjects.Container
       targets: this.bubble,
       scale: 1,
       ease: 'Bounce.easeOut',
-      duration: 300
+      duration: 500
     });
-    console.log('shooter attach done');
   }
 
   returnBubble(bubble: IBubble) {
@@ -142,7 +159,7 @@ export default class Shooter extends Phaser.GameObjects.Container
       this.bubble.x,
       this.bubble.y,
       vec,
-      physicsRadius,
+      76 - physicsRadius / 2,
       this.bubble.color
     );
   }

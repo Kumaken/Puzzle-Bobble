@@ -34,8 +34,33 @@ export default class PreloadScene extends Phaser.Scene {
     );
     this.load.image(TextureKeys.BubblePop, 'src/Assets/Bubbles/Bubble_Pop.png');
 
-    this.load.image(TextureKeys.Shooter, 'src/Assets/Shooters/shooter.png');
+    this.load.image(TextureKeys.Shooter, 'src/Assets/Shooters/0.png');
+    this.load.image(
+      TextureKeys.ShooterFoundation,
+      'src/Assets/ShooterFoundation/0.png'
+    );
+    this.load.image(
+      TextureKeys.PlatformSign,
+      'src/Assets/ShooterDecor/sign.png'
+    );
+    this.load.image(
+      TextureKeys.BubblePlatform,
+      'src/Assets/ShooterDecor/platform.png'
+    );
 
+    // Game Borders
+    this.load.image(TextureKeys.TopBorder, 'src/Assets/Borders/top1.png');
+    this.load.image(TextureKeys.LeftBorder, 'src/Assets/Borders/left1.png');
+    this.load.image(TextureKeys.RightBorder, 'src/Assets/Borders/right1.png');
+    // this.load.image(
+    //   TextureKeys.BottomBorder,
+    //   'src/Assets/Borders/platform.png'
+    // );
+    this.load.image(
+      TextureKeys.DropBottom,
+      'src/Assets/Borders/dropbottom1.png'
+    );
+    this.load.image(TextureKeys.DropLoop, 'src/Assets/Borders/droploop1.png');
     this.game.events.once(
       GameEvents.PreloadFinished,
       this.handlePreloadFinished,
@@ -49,8 +74,8 @@ export default class PreloadScene extends Phaser.Scene {
 
   private handlePreloadFinished() {
     this.scene.stop(SceneKeys.Preload);
-    console.log('preload finished');
+    // // console.log('preload finished');
 
-    this.scene.start(SceneKeys.GameUI);
+    this.scene.start(SceneKeys.Game);
   }
 }

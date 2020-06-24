@@ -2,9 +2,9 @@ enum SceneKeys {
   Bootstrap = 'bootstrap',
   Preload = 'PreloadScene',
   TitleScreen = 'TitleScene',
-  Game = 'game',
-  GameUI = 'LevelScene',
-  GameOver = 'game-over',
+  GameUI = 'GameUI',
+  Game = 'LevelScene',
+  GameOver = 'GameOver',
   TipsInterstitial = 'tip-interstitial'
 }
 

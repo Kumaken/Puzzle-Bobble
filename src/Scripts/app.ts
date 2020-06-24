@@ -2,6 +2,11 @@ import 'phaser';
 import { config, PhaserConfig } from './Config/PhaserConfig';
 import registerScenes from './registerScenes';
 import SceneKeys from './Config/SceneKeys';
+import * as React from 'jsx-dom';
+window['React'] = React;
+export { React };
+
+import './Style/Styles.scss';
 
 let game: PhaserGame;
 

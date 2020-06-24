@@ -13,12 +13,20 @@ import BubbleLayoutData from '../Object/BubbleLayoutData';
 import { IBubble } from '../Interfaces/IBubble';
 import { IShooter } from '../Interfaces/IShooter';
 import ShotGuide from '../Object/guides/ShotGuide';
+import GameUI from './GameUI';
+import DescentController from '../Object/DescentController';
 
 enum GameState {
   Playing,
   GameOver,
   GameWin
 }
+
+// GAME SETTINGS
+const gameSettings = {
+  bubblesPerRow: 10,
+  initialBubbleHeight: 360
+};
 const DPR = window.devicePixelRatio;
 
 export default class LevelScene extends Phaser.Scene {
@@ -28,9 +36,11 @@ export default class LevelScene extends Phaser.Scene {
   private bubbleSpawnModel!: IBubbleSpawnModel;
   private shooter?: IShooter;
   private inCollision: boolean;
+  private gameUI: GameUI;
+  private descentController?: DescentController;
 
   constructor() {
-    super({ key: SceneKeys.GameUI });
+    super({ key: SceneKeys.Game });
   }
 
   init(): void {
@@ -43,24 +53,74 @@ export default class LevelScene extends Phaser.Scene {
 
     const width = this.scale.width;
     const height = this.scale.height;
-    console.log('width, height:', width, height);
-    this.physics.world.setBounds(0, 0, width, height);
-    this.physics.world.setBoundsCollision(true, true, true, true);
 
     const staticBubblePool = this.add.staticBubblePool(TextureKeys.BubbleBlack);
 
-    this.grid = new BubbleGrid(this, staticBubblePool);
+    // Setup Bubble Grid
+    this.grid = new BubbleGrid(
+      this,
+      staticBubblePool,
+      gameSettings.bubblesPerRow
+    );
     this.grid
-      .setLayoutData(new BubbleLayoutData(this.bubbleSpawnModel))
+      .setLayoutData(
+        new BubbleLayoutData(this.bubbleSpawnModel, gameSettings.bubblesPerRow)
+      )
       .generate();
 
+    // Setup world boundary
+    this.physics.world.setBounds(
+      this.grid.gridX,
+      this.grid.effGridY,
+      this.grid.gridWidth,
+      this.grid.gridHeight
+    );
+    this.physics.world.setBoundsCollision(true, true, true, true);
+
+    // Shooter Platform:
+    const shooterFoundationIMG = this.textures
+      .get(TextureKeys.ShooterFoundation)
+      .getSourceImage();
+    this.add.sprite(
+      width * 0.5,
+      height - shooterFoundationIMG.height / 2,
+      TextureKeys.ShooterFoundation
+    );
+
+    // Next bubble sign:
+    const nextBubbleSignIMG = this.textures
+      .get(TextureKeys.PlatformSign)
+      .getSourceImage();
+    this.add.sprite(
+      width * 0.5 + 200,
+      height - nextBubbleSignIMG.height / 2 - 30,
+      TextureKeys.PlatformSign
+    );
+
+    // Next bubble Platform:
+    const bubblePlatformIMG = this.textures
+      .get(TextureKeys.BubblePlatform)
+      .getSourceImage();
+    this.add.sprite(
+      width * 0.5 + 200,
+      height - bubblePlatformIMG.height / 2,
+      TextureKeys.BubblePlatform
+    );
+
     // Shooter:
-    this.shooter = this.add.shooter(width * 0.5, height + 30 * DPR, '');
+    const shooterIMG = this.textures.get(TextureKeys.Shooter).getSourceImage();
+    this.shooter = this.add.shooter(
+      width * 0.5 - 20,
+      height - shooterIMG.height / 2 - 30,
+      TextureKeys.Shooter
+    );
     this.shooter.setGuide(new ShotGuide(this));
 
     // Shooter Bubble Pool:
     const bubblePool = this.add.bubblePool(TextureKeys.BubbleBlack);
     this.shooter.setBubblePool(bubblePool);
+    this.shooter.attachBubble();
+    this.shooter.attachNextBubble();
     this.shooter.attachBubble();
 
     // Collider Setup:
@@ -74,7 +134,13 @@ export default class LevelScene extends Phaser.Scene {
     this.inCollision = false;
 
     // Starting grid position:
-    this.grid.moveBy(400);
+    this.descentController = new DescentController(
+      this,
+      this.grid,
+      this.bubbleSpawnModel,
+      this.grid.bubbleInterval
+    );
+    this.descentController.setStartingDescent(gameSettings.initialBubbleHeight);
 
     const bubbleSub = this.grid
       .onBubbleWillBeDestroyed()
@@ -82,17 +148,21 @@ export default class LevelScene extends Phaser.Scene {
         this.handleBubbleWillBeDestroyed(bubble);
       });
 
-    this.scene.run(SceneKeys.GameUI, {
-      bubblesDestroyed: this.grid.onBubblesDestroyed(),
-      bubblesAdded: this.grid.onBubblesAdded(),
-      infectionsChanged: this.bubbleSpawnModel.onPopulationChanged()
-    });
-
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       bubbleSub.unsubscribe();
 
       this.handleShutdown();
     });
+
+    // Activate Game UI:
+    this.scene.run(SceneKeys.GameUI, {
+      ballsDestroyed: this.grid.onBubblesDestroyed(),
+      ballsAdded: this.grid.onBubblesAdded()
+      // infectionsChanged: this.bubbleSpawnModel.onPopulationChanged()
+    });
+    this.gameUI = this.scene.get(SceneKeys.GameUI) as GameUI;
+
+    this.scene.bringToTop(SceneKeys.GameUI);
   }
 
   update(t: number, dt: number): void {
@@ -102,7 +172,20 @@ export default class LevelScene extends Phaser.Scene {
       return;
     }
     this.bubbleSpawnModel.update(dt);
+    this.descentController.update(dt);
     this.shooter.update(dt);
+
+    // debug coords:
+    this.gameUI.updateMouseCoordsText(this);
+
+    const dcy = this.grid?.bottom;
+
+    if (dcy > this.shooter.y - this.shooter.shooterHeight / 2) {
+      // game over
+      console.log('gameover');
+      this.state = GameState.GameOver;
+      this.handleGameOver();
+    }
   }
 
   private handleBubbleWillBeDestroyed(bubble: IBubble) {
@@ -126,7 +209,7 @@ export default class LevelScene extends Phaser.Scene {
 
   private handleShutdown() {
     this.scene.stop(SceneKeys.GameUI);
-
+    this.descentController?.destroy();
     this.grid?.destroy();
   }
 
@@ -161,13 +244,13 @@ export default class LevelScene extends Phaser.Scene {
     bubble: IBubble,
     gridBubble: Phaser.GameObjects.GameObject
   ) {
-    const b = bubble as IBubble;
-    const bx = b.x;
+    if (!this.inCollision) {
+      const b = bubble as IBubble;
+      const bx = b.x;
+      if (bx == 0) return;
 
-    if (!this.inCollision && bx !== 0) {
       // prevent multiple chain collision and collision when resetting ball on 0,0 position
       this.inCollision = true;
-      console.log('collide');
       b.stop();
       const color = b.color;
       const by = b.y;
@@ -187,9 +270,8 @@ export default class LevelScene extends Phaser.Scene {
       // get where the bubble would be at contact with grid
       const x = gx + directionToGrid.x * gb.width;
       const y = gy + directionToGrid.y * gb.width;
-      console.log('bx,by:', bx, by);
-      console.log('gx,gy:', gx, gy);
-      console.log('final x,y:', x, y);
+      // handle if x or y is goes out of world bounds:
+
       this.shooter?.returnBubble(b);
 
       // this.descentController?.hold()
@@ -197,9 +279,15 @@ export default class LevelScene extends Phaser.Scene {
       //await this.descentController?.reversing()
 
       await this.grid?.attachBubble(x, y, color, gb, vx, vy);
+
+      await this.shooter?.attachNextBubble();
       await this.shooter?.attachBubble();
       this.inCollision = false;
-      console.log('Done handling collision');
     }
+  }
+
+  private handleGameOver() {
+    this.scene.pause(SceneKeys.GameUI);
+    this.scene.run(SceneKeys.GameOver);
   }
 }

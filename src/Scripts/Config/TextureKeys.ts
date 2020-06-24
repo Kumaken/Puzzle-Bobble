@@ -11,7 +11,16 @@ enum TextureKeys {
   BubbleWhite = 'bubble-white',
   BubbleBlack = 'bubble-black',
   BubblePop = 'bubble-pop',
-  Shooter = 'shooter'
+  Shooter = 'shooter',
+  ShooterFoundation = 'shooter-foundation',
+  PlatformSign = 'platform-sign',
+  BubblePlatform = 'bubble-platform',
+  TopBorder = 'top-border',
+  LeftBorder = 'left-border',
+  RightBorder = 'right-border',
+  BottomBorder = 'bottom-border',
+  DropBottom = 'drop-bottom',
+  DropLoop = 'drop-loop'
 }
 
 function colorToBubbleTexture(bubbleColor: ColorConfig): TextureKeys {

@@ -5,6 +5,9 @@ import { getResolution } from '../Util/Util';
 export const config: PhaserConfig = {
   title: 'PhaserGame',
   type: Phaser.AUTO,
+  dom: {
+    createContainer: true // this is needed for dom funtions to work!
+  },
   scale: {
     parent: 'phaser-app',
     mode: Phaser.Scale.FIT,

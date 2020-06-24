@@ -1,4 +1,6 @@
 interface IBubble extends Phaser.Physics.Arcade.Sprite {
+  readonly _x: number;
+  readonly _y: number;
   readonly color: number;
   readonly radius: number;
   readonly physicsRadius: number;

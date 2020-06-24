@@ -1,10 +1,42 @@
 <!DOCTYPE html>
 <html>
-  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="index.css" />
   <head>
     <title>Phaser Game</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/bulmaswatch/superhero/bulmaswatch.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nosifer&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="src/Scripts/Style/LoadFonts.css" />
+    <link rel="stylesheet" href="src/Scripts/Style/Styles.scss" />
     <script src="dist/app.js"></script>
   </head>
-  <div id= "phaser-app"></div> 
+  <body>
+    <!-- load the fonts in a invisible div first -->
+    <div
+      style="
+        font-family: SilkscreenA;
+        position: absolute;
+        left: -1000px;
+        visibility: hidden;
+      "
+    >
+      .
+    </div>
+    <div
+      style="
+        font-family: SHPinscher-Regular;
+        position: absolute;
+        left: -1000px;
+        visibility: hidden;
+      "
+    >
+      .
+    </div>
+    <div id="phaser-app"></div>
   </body>
 </html>

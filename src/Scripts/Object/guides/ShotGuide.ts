@@ -32,7 +32,7 @@ export default class ShotGuide implements IShotGuide {
     color: number = ColorConfig.LightColor as number
   ): void {
     const width = this.scene.scale.width;
-    const count = 9;
+    const count = 20;
 
     if (this.guides.length <= 0) {
       for (let i = 0; i < count; ++i) {
@@ -70,11 +70,13 @@ export default class ShotGuide implements IShotGuide {
       y = ny;
 
       const guide = this.guides[i];
+      // if shot guide tracker touches a bubble, don't show it:
+
       guide.x = x;
       guide.y = y;
       guide.alpha = alpha;
 
-      alpha *= 0.8;
+      alpha *= 0.95;
     }
   }
 

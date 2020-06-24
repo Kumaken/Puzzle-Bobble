@@ -15,9 +15,9 @@ export default class BubbleLayoutData {
   private growthModel: IBubbleSpawnModel;
   private bubblesPerRow: number;
 
-  constructor(growthModel: IBubbleSpawnModel) {
+  constructor(growthModel: IBubbleSpawnModel, bubblesPerRow: number) {
     this.growthModel = growthModel;
-    this.bubblesPerRow = 10;
+    this.bubblesPerRow = bubblesPerRow;
   }
 
   getNextRow(isRowStaggered: boolean): ColorConfig[] {
