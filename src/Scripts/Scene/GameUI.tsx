@@ -15,7 +15,9 @@ export default class GameUI extends Phaser.Scene {
   private timePassed = 0;
   private timePassedText?: Phaser.GameObjects.Text;
 
-  private level = 1;
+  public static level;
+  private levelText?: Phaser.GameObjects.Text;
+
   private subscriptions: SubscriptionLike[] = [];
 
   private mouseCoordsText?: Phaser.GameObjects.Text;
@@ -25,6 +27,7 @@ export default class GameUI extends Phaser.Scene {
   }
 
   init() {
+    GameUI.level = 1;
     this.score = 0;
     this.timePassed = 0;
   }
@@ -55,9 +58,17 @@ export default class GameUI extends Phaser.Scene {
     });
 
     const rx = width - offsetX;
-    const infectionsText = this.createTimePassedText(0);
+    const timePassedText = this.createTimePassedText(0);
     this.timePassedText = this.add
-      .text(rx, offsetY, infectionsText, {
+      .text(rx, offsetY, timePassedText, {
+        fontSize: 22 * DPR,
+        fontFamily: 'SHPinscher-Regular'
+      })
+      .setOrigin(1, 0);
+
+    const levelText = this.createLevelText(1);
+    this.levelText = this.add
+      .text((rx - offsetX) / 2, offsetY, levelText, {
         fontSize: 22 * DPR,
         fontFamily: 'SHPinscher-Regular'
       })
@@ -107,6 +118,10 @@ export default class GameUI extends Phaser.Scene {
     return `Score: ${score.toLocaleString()}`;
   }
 
+  private createLevelText(level: number) {
+    return `Level: ${level.toLocaleString()}`;
+  }
+
   private addToScore(points: number) {
     this.score += points;
     this.updateScore(this.score);
@@ -137,20 +152,27 @@ export default class GameUI extends Phaser.Scene {
 
     this.timePassed += 1;
     this.timePassedText.text = this.createTimePassedText(this.timePassed);
+
+    this.levelUp(this.timePassed);
   }
 
-  //   private updateInfections(count: number) {
-  //     if (!this.infectionsText) {
-  //       return;
-  //     }
-
-  //     this.infectionsText.text = this.createInfectionsText(count);
-  //   }
+  private levelUpTimes = [3, 10, 30, 60, 150];
+  private levelUp(timePassed) {
+    if (timePassed >= this.levelUpTimes[GameUI.level - 1])
+      this.updateLevel(++GameUI.level);
+  }
 
   public updateMouseCoordsText(gamescene: Phaser.Scene) {
     this.mouseCoordsText.text =
       Math.round(gamescene.game.input.mousePointer.x) +
       '/' +
       Math.round(gamescene.game.input.mousePointer.y);
+  }
+
+  private updateLevel(level: number) {
+    if (!level) {
+      return;
+    }
+    this.levelText.text = this.createLevelText(level);
   }
 }

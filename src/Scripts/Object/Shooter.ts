@@ -22,6 +22,7 @@ export default class Shooter extends Phaser.GameObjects.Container
   private _height: number;
   private shootSubject = new Subject<IBubble>();
   private nextBubble: IBubble;
+  public static isShooting: boolean;
 
   get radius(): number {
     return RADIUS;
@@ -36,6 +37,7 @@ export default class Shooter extends Phaser.GameObjects.Container
     const base = scene.add.image(0, 0, texture);
     this._height = base.height;
     this.add(base);
+    Shooter.isShooting = false;
 
     console.log('shooter constructed!', this._height);
 
@@ -130,6 +132,7 @@ export default class Shooter extends Phaser.GameObjects.Container
   }
 
   update(dt: number) {
+    // blocks shooter when isShooting is true
     if (!this.bubble) {
       return;
     }
@@ -168,6 +171,7 @@ export default class Shooter extends Phaser.GameObjects.Container
   private handlePointerDown() {}
 
   private handlePointerUp() {
+    Shooter.isShooting = true;
     if (!this.bubble) {
       return;
     }

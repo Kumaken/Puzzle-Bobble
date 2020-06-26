@@ -50,11 +50,11 @@ export default class BubbleSpawnModel implements IBubbleSpawnModel {
   }
 
   public static getBubbleSpawnRate(level: number) {
-    if (level <= 2) {
+    if (level < 2) {
       return 2000;
     }
     if (level <= 5) {
-      return 3000;
+      return 500;
     }
 
     return 5500;

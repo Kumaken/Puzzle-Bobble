@@ -51,6 +51,7 @@ export default class BubblePool extends Phaser.Physics.Arcade.Group
     }
 
     bubble.setRandomColor();
+    bubble.anims.play(bubble._texture + '_idle', true);
     return bubble;
   }
 
@@ -58,6 +59,7 @@ export default class BubblePool extends Phaser.Physics.Arcade.Group
     this.killAndHide(bubble);
     this.world.remove(bubble.body);
     bubble.body.reset(0, 0);
+    bubble.anims.stop();
   }
 }
 

@@ -8,6 +8,7 @@ import { IBubble } from '../Interfaces/IBubble';
 import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
 import ColorConfig from '../Config/ColorConfig';
 import TextureKeys from '../Config/TextureKeys';
+import Shooter from './Shooter';
 
 interface IGridPosition {
   row: number;
@@ -42,10 +43,15 @@ export default class BubbleGrid {
   public gridWidth: number;
   public gridHeight: number;
   public gridX: number;
+  public gridRightX: number;
   public gridY: number;
   public effGridY: number;
 
+  public descentInterval: number;
   private borderWidth = 22;
+
+  private bubbleLeftmostX: number;
+  private bubbleRightmostX: number;
 
   /**
    * Gets total active bubbles in the game
@@ -93,7 +99,7 @@ export default class BubbleGrid {
     this.scene = scene;
     this.pool = pool;
     this.bubblesPerRow = bubblesPerRow;
-    const sample = this.pool.spawn(0, 0);
+    const sample = this.pool.spawn(0, 0, null);
     this.size = new Phaser.Structs.Size(sample.width, sample.height);
     this.pool.despawn(sample);
 
@@ -115,10 +121,10 @@ export default class BubbleGrid {
       this.gridHeight,
       TextureKeys.LeftBorder
     );
-    const rightX =
+    this.gridRightX =
       this.gridX + this.size.width * bubblesPerRow + this.size.width * 0.5;
     scene.add.tileSprite(
-      rightX,
+      this.gridRightX,
       this.gridY,
       this.borderWidth,
       this.gridHeight,
@@ -128,13 +134,25 @@ export default class BubbleGrid {
       .get(TextureKeys.TopBorder)
       .getSourceImage();
     scene.add.tileSprite(
-      (this.gridX + rightX) / 2,
+      (this.gridX + this.gridRightX) / 2,
       this.gridY + topBorderIMG.height,
       this.gridWidth,
       topBorderIMG.height * 2,
       TextureKeys.TopBorder
     );
-    this.effGridY = this.gridY + topBorderIMG.height * 2;
+
+    this.effGridY = topBorderIMG.height * 2;
+
+    this.descentInterval =
+      scene.textures.get(TextureKeys.DropLoop).getSourceImage().height * 2;
+
+    this.bubbleLeftmostX =
+      this.midPoint -
+      (bubblesPerRow / 2) * this.size.width +
+      this.size.width * 0.25;
+    this.bubbleRightmostX =
+      this.bubbleLeftmostX + this.size.width * 0.5 * this.bubblesPerRow;
+    console.log('bubble', this.bubbleLeftmostX, this.bubbleRightmostX);
   }
 
   destroy(): void {
@@ -264,14 +282,14 @@ export default class BubbleGrid {
     //   }
     // }
     // if (tx > this.scale.width) tx = this.scale.width;
-    console.log('before', x, y, tx, ty);
-    if (tx < this.grid[1][0].x) {
-      if (this.isRowStaggered(bRow)) tx = this.grid[0][1].x;
-      else tx = this.grid[1][0].x;
+    if (tx < this.bubbleLeftmostX) {
+      if (this.isRowStaggered(bRow))
+        tx = this.bubbleLeftmostX + this.size.width * 0.5;
+      else tx = this.bubbleLeftmostX;
     }
     // if (ty > this.scale.height) ty = this.scale.height;
     console.log('after', x, y, tx, ty);
-    const newBubble = this.pool.spawn(x, y).setColor(color);
+    const newBubble = this.pool.spawn(x, y, color);
     this.insertAt(bRow, bCol, newBubble);
     console.table(this.grid);
     const matches = this.findMatchesAt(bRow, bCol, color as number);
@@ -280,7 +298,7 @@ export default class BubbleGrid {
       this.bubblesCount += 1;
       this.bubblesAddedSubject.next(1);
       this.bubbleAttachedSubject.next(newBubble);
-      this.animateAttachBounceAt(bRow, bCol, tx, ty, newBubble);
+      await this.animateAttachBounceAt(bRow, bCol, tx, ty, newBubble);
       return;
     }
 
@@ -329,12 +347,12 @@ export default class BubbleGrid {
       await this.animateOrphans(orphans);
     }
 
-    // console.lo('DONE ATTACH BUBBLE -------------');
+    console.log('DONE ATTACH BUBBLE -------------');
   }
 
   /**
    * Initial generation of bubbles
-   * @param rows how many rows to generate max to hold the bubbles
+   * @param rows how many rows to generate initially to hold the bubbles
    */
   generate(rows = 6): this {
     if (!this.layoutData) {
@@ -428,10 +446,8 @@ export default class BubbleGrid {
 
     row.forEach((colorCode) => {
       if (colorCode) {
-        const b = this.pool.spawn(x, y);
+        const b = this.pool.spawn(x, y, colorCode);
         gridRow.push(b);
-
-        b?.setColor(colorCode as number);
         x += width;
       } else {
         // console.lo(colorCode);
@@ -498,7 +514,7 @@ export default class BubbleGrid {
     await Promise.all(tasks);
   }
 
-  private animateAttachBounceAt(
+  private async animateAttachBounceAt(
     row: number,
     col: number,
     tx: number,
@@ -506,6 +522,8 @@ export default class BubbleGrid {
     newBubble: IBubble
   ) {
     // https://github.com/photonstorm/phaser/blob/v3.22.0/src/math/easing/EaseMap.js
+
+    // this timeline runs animation sequence sequentially
     const timeline = this.scene.tweens.createTimeline();
     timeline.add({
       targets: newBubble,
@@ -528,12 +546,15 @@ export default class BubbleGrid {
       onComplete: () => {
         const body = newBubble.body as Phaser.Physics.Arcade.StaticBody;
         body.updateFromGameObject();
+        Shooter.isShooting = false;
+        console.log('finished animation');
       }
     });
 
-    timeline.play();
+    await timeline.play();
 
-    this.jiggleNeighbors(row, col);
+    await this.jiggleNeighbors(row, col);
+    console.log('finished animate attach');
   }
 
   /**
@@ -756,7 +777,7 @@ export default class BubbleGrid {
     return adjacentMatches;
   }
 
-  private jiggleNeighbors(sourceRow: number, sourceCol: number) {
+  private async jiggleNeighbors(sourceRow: number, sourceCol: number) {
     const sourceBubble = this.getAt(sourceRow, sourceCol);
     const firstNeightbors = this.getNeighbors(sourceRow, sourceCol);
 
@@ -794,10 +815,14 @@ export default class BubbleGrid {
           targets: bubble,
           y,
           duration: 50,
-          ease: 'Back.easeOut'
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            console.log('finished animation jiggle');
+          }
         });
 
-        timeline.play();
+        await timeline.play();
+        console.log('jiggle finished');
       }
     }
   }
@@ -862,5 +887,23 @@ export default class BubbleGrid {
 
       this.grid.pop();
     }
+  }
+
+  public spawnNextWave() {
+    this.moveBy(this.bubbleInterval);
+    this.spawnRow();
+  }
+
+  public descend() {
+    this.moveBy(this.descentInterval);
+
+    this.scene.add.tileSprite(
+      (this.gridX + this.gridRightX) / 2,
+      this.effGridY + this.descentInterval * 0.5,
+      this.gridWidth,
+      this.descentInterval,
+      TextureKeys.DropLoop
+    );
+    this.effGridY += this.descentInterval;
   }
 }

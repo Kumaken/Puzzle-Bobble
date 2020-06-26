@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import TextureKeys from '../Config/TextureKeys';
 import SceneKeys from '../Config/SceneKeys';
 import GameEvents from '../Config/GameEvents';
+import AnimationKeys from '../Config/AnimationKeys';
 
 export default class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -10,28 +11,18 @@ export default class PreloadScene extends Phaser.Scene {
 
   preload(): void {
     /* all the routes here is referenced from root! */
-    this.load.image(TextureKeys.BubbleRed, 'src/Assets/Bubbles/Ball_Red.png');
-    this.load.image(
-      TextureKeys.BubbleGreen,
-      'src/Assets/Bubbles/Ball_Green.png'
-    );
-    this.load.image(TextureKeys.BubbleBlue, 'src/Assets/Bubbles/Ball_Blue.png');
-    this.load.image(
-      TextureKeys.BubbleYellow,
-      'src/Assets/Bubbles/Ball_Yellow.png'
-    );
-    this.load.image(
-      TextureKeys.BubblePurple,
-      'src/Assets/Bubbles/Ball_Purple.png'
-    );
-    this.load.image(
-      TextureKeys.BubbleWhite,
-      'src/Assets/Bubbles/Ball_White.png'
-    );
-    this.load.image(
-      TextureKeys.BubbleBlack,
-      'src/Assets/Bubbles/Ball_Black.png'
-    );
+    // Load bubbles:
+    // for(let i=0; i<8; i++){
+    //   this.load.image(TextureKeys.BubbleRed, 'src/Assets/Bubbles/red_bubble/.png');
+    // }
+    this.bubbleTextures.forEach((texture) => {
+      this.load.atlas(
+        texture,
+        `src/Assets/Bubbles/${texture}/${texture}.png`,
+        `src/Assets/Bubbles/${texture}/${texture}.json`
+      );
+    });
+
     this.load.image(TextureKeys.BubblePop, 'src/Assets/Bubbles/Bubble_Pop.png');
 
     this.load.image(TextureKeys.Shooter, 'src/Assets/Shooters/0.png');
@@ -70,11 +61,56 @@ export default class PreloadScene extends Phaser.Scene {
 
   create(): void {
     this.game.events.emit(GameEvents.PreloadFinished);
+    this.prepareBubbleAnimation();
+  }
+
+  private bubbleTextures = [
+    TextureKeys.BubbleRed,
+    TextureKeys.BubbleBlue,
+    TextureKeys.BubbleGreen,
+    TextureKeys.BubbleYellow,
+    TextureKeys.BubblePurple,
+    TextureKeys.BubbleWhite,
+    TextureKeys.BubbleBlack
+  ];
+
+  private prepareBubbleAnimation() {
+    this.bubbleTextures.forEach((texture) => {
+      let BubbleFrames;
+      if (texture === TextureKeys.BubbleGreen)
+        BubbleFrames = this.anims.generateFrameNames(texture, {
+          start: 0,
+          end: 3,
+          zeroPad: 0,
+          suffix: '.png'
+        });
+      else if (texture === TextureKeys.BubbleBlack)
+        BubbleFrames = this.anims.generateFrameNames(texture, {
+          start: 0,
+          end: 4,
+          zeroPad: 0,
+          suffix: '.png'
+        });
+      else
+        BubbleFrames = this.anims.generateFrameNames(texture, {
+          start: 0,
+          end: 7,
+          zeroPad: 0,
+          suffix: '.png'
+        });
+
+      this.anims.create({
+        key: `${texture}_idle`,
+        frames: BubbleFrames,
+        frameRate: 6,
+        repeat: -1
+      });
+    });
   }
 
   private handlePreloadFinished() {
     this.scene.stop(SceneKeys.Preload);
-    // // console.log('preload finished');
+    console.log('preload finished');
 
     this.scene.start(SceneKeys.Game);
   }

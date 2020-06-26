@@ -15,6 +15,7 @@ import { IShooter } from '../Interfaces/IShooter';
 import ShotGuide from '../Object/guides/ShotGuide';
 import GameUI from './GameUI';
 import DescentController from '../Object/DescentController';
+import Shooter from '../Object/Shooter';
 
 enum GameState {
   Playing,
@@ -25,7 +26,8 @@ enum GameState {
 // GAME SETTINGS
 const gameSettings = {
   bubblesPerRow: 10,
-  initialBubbleHeight: 360
+  initialBubbleHeight: 360,
+  maxBubbleCount: 150
 };
 const DPR = window.devicePixelRatio;
 
@@ -45,7 +47,7 @@ export default class LevelScene extends Phaser.Scene {
 
   init(): void {
     this.state = GameState.Playing;
-    this.bubbleSpawnModel = new BubbleSpawnModel(100);
+    this.bubbleSpawnModel = new BubbleSpawnModel(gameSettings.maxBubbleCount);
   }
 
   create(): void {
@@ -131,7 +133,6 @@ export default class LevelScene extends Phaser.Scene {
       null,
       this
     );
-    this.inCollision = false;
 
     // Starting grid position:
     this.descentController = new DescentController(
@@ -244,13 +245,12 @@ export default class LevelScene extends Phaser.Scene {
     bubble: IBubble,
     gridBubble: Phaser.GameObjects.GameObject
   ) {
-    if (!this.inCollision) {
+    if (Shooter.isShooting) {
       const b = bubble as IBubble;
       const bx = b.x;
       if (bx == 0) return;
 
       // prevent multiple chain collision and collision when resetting ball on 0,0 position
-      this.inCollision = true;
       b.stop();
       const color = b.color;
       const by = b.y;
@@ -282,7 +282,6 @@ export default class LevelScene extends Phaser.Scene {
 
       await this.shooter?.attachNextBubble();
       await this.shooter?.attachBubble();
-      this.inCollision = false;
     }
   }
 

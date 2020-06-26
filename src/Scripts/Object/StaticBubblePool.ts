@@ -2,7 +2,8 @@ import 'phaser';
 import Bubble from './Bubble';
 import { IBubble } from '../Interfaces/IBubble';
 import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
-
+import TextureKeys from '../Config/TextureKeys';
+import ColorConfig from '../Config/ColorConfig';
 export default class StaticBubblePool extends Phaser.Physics.Arcade.StaticGroup
   implements IStaticBubblePool {
   private texture: string;
@@ -32,10 +33,10 @@ export default class StaticBubblePool extends Phaser.Physics.Arcade.StaticGroup
     this.texture = texture;
   }
 
-  spawn(x: number, y: number): IBubble {
+  spawn(x: number, y: number, color: ColorConfig): IBubble {
     const spawnExisting = this.countActive(false) > 0;
 
-    const bubble: IBubble = this.get(x, y, this.texture);
+    const bubble: IBubble = this.get(x, y);
 
     if (!bubble) {
       return bubble;
@@ -53,6 +54,12 @@ export default class StaticBubblePool extends Phaser.Physics.Arcade.StaticGroup
       bubble.setRandomColor();
     }
 
+    if (color) {
+      bubble.setColor(color as number);
+    }
+
+    bubble.anims.play(bubble._texture + '_idle', true);
+
     (bubble.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
 
     return bubble;
@@ -65,6 +72,7 @@ export default class StaticBubblePool extends Phaser.Physics.Arcade.StaticGroup
 
     bubble.alpha = 1;
     bubble.body.reset(0, 0);
+    bubble.anims.stop();
   }
 }
 

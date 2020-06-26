@@ -16,8 +16,6 @@ export default class TitleScene extends Phaser.Scene {
 
   create(): void {
     this.fpsText = new FpsText(this);
-    const staticBallPool = this.add.staticBubblePool(TextureKeys.BubbleBlack);
-    staticBallPool.spawn(100, 100);
   }
 
   update(): void {

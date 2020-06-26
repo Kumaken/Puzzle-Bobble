@@ -1,7 +1,7 @@
 import 'phaser';
 import ColorConfig from '../Config/ColorConfig';
 import { IBubble } from '../Interfaces/IBubble';
-import { colorToBubbleTexture } from '../Config/TextureKeys';
+import TextureKeys, { colorToBubbleTexture } from '../Config/TextureKeys';
 
 const ALL_COLORS = [
   ColorConfig.Red,
@@ -16,6 +16,7 @@ const ALL_COLORS = [
 export default class Bubble extends Phaser.Physics.Arcade.Sprite
   implements IBubble {
   private _color: number = ColorConfig.Red;
+  public _texture: TextureKeys;
 
   get _x(): number {
     return this.x;
@@ -42,9 +43,10 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     x: number,
     y: number,
     texture: string,
-    frame = ''
+    frame = 0
   ) {
     super(scene, x, y, texture, frame);
+    this._texture = texture as TextureKeys;
   }
 
   setRandomColor(): IBubble {
@@ -54,7 +56,8 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
 
   setColor(color: number): IBubble {
     this._color = color;
-    return this.setTexture(colorToBubbleTexture(color));
+    this._texture = colorToBubbleTexture(color);
+    return this.setTexture(this._texture);
   }
 
   useCircleCollider(): IBubble {
