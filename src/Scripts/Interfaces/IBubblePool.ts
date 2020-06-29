@@ -2,7 +2,7 @@ import { IBubble } from './IBubble';
 
 interface IBubblePool extends Phaser.Physics.Arcade.Group {
   spawn(x: number, y: number): IBubble;
-  despawn(ball: IBubble);
+  despawn(bubble: IBubble);
 }
 
 export { IBubblePool };

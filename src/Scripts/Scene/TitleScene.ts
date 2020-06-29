@@ -10,9 +10,7 @@ export default class TitleScene extends Phaser.Scene {
     super({ key: SceneKeys.TitleScreen });
   }
 
-  preload(): void {
-    this.load.image('virus', 'src/Assets/Bubbles/Ball_Green.png');
-  }
+  preload(): void {}
 
   create(): void {
     this.fpsText = new FpsText(this);

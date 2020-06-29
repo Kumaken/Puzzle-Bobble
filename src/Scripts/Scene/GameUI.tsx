@@ -95,7 +95,7 @@ export default class GameUI extends Phaser.Scene {
       return;
     }
 
-    const destroyedSub = data.ballsDestroyed?.subscribe((count) => {
+    const destroyedSub = data.bubblesDestroyed?.subscribe((count) => {
       const multiplier = Math.max(1, count / 10);
       this.addToScore(Math.floor(count * multiplier));
     });
@@ -156,7 +156,28 @@ export default class GameUI extends Phaser.Scene {
     this.levelUp(this.timePassed);
   }
 
-  private levelUpTimes = [3, 10, 30, 60, 150];
+  private levelUpTimes = [
+    3, // time taken to level up to lvl 2
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130,
+    140,
+    150,
+    160,
+    170,
+    180
+  ];
+
   private levelUp(timePassed) {
     if (timePassed >= this.levelUpTimes[GameUI.level - 1])
       this.updateLevel(++GameUI.level);

@@ -12,18 +12,18 @@ const ALL_COLORS = [
 ];
 
 export default class BubbleLayoutData {
-  private growthModel: IBubbleSpawnModel;
+  private bubbleSpawnModel: IBubbleSpawnModel;
   private bubblesPerRow: number;
 
-  constructor(growthModel: IBubbleSpawnModel, bubblesPerRow: number) {
-    this.growthModel = growthModel;
+  constructor(bubbleSpawnModel: IBubbleSpawnModel, bubblesPerRow: number) {
+    this.bubbleSpawnModel = bubbleSpawnModel;
     this.bubblesPerRow = bubblesPerRow;
   }
 
   getNextRow(isRowStaggered: boolean): ColorConfig[] {
     let bubblePerRow = this.bubblesPerRow;
     if (isRowStaggered) bubblePerRow -= 1;
-    const count = this.growthModel.getNext(bubblePerRow);
+    const count = this.bubbleSpawnModel.getNext(bubblePerRow);
 
     // TODO: potentially randomize positions when less than 6 available
 

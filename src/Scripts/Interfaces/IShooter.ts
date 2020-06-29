@@ -11,9 +11,9 @@ interface IShooter extends Phaser.GameObjects.Container {
   setBubblePool(pool: IBubblePool);
   setGuide(guide: IShotGuide);
 
-  attachBubble(ball?: IBubble);
+  attachBubble(bubble?: IBubble);
   attachNextBubble();
-  returnBubble(ball: IBubble);
+  returnBubble(bubble: IBubble);
   update(dt: number);
 }
 

@@ -1,6 +1,8 @@
 import * as Phaser from 'phaser';
 import ColorConfig from '../../Config/ColorConfig';
 import { IShotGuide } from '../../Interfaces/IShotGuide';
+import BubbleGrid from '../BubbleGrid';
+import Bubble from '../Bubble';
 
 const DPR = window.devicePixelRatio;
 
@@ -15,9 +17,11 @@ export default class ShotGuide implements IShotGuide {
   private group: Phaser.GameObjects.Group;
 
   private guides: GuideCricle[] = [];
+  private grid: BubbleGrid;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, bubbleGrid: BubbleGrid) {
     this.scene = scene;
+    this.grid = bubbleGrid;
 
     this.group = scene.add.group({
       classType: GuideCricle
@@ -32,7 +36,7 @@ export default class ShotGuide implements IShotGuide {
     color: number = ColorConfig.LightColor as number
   ): void {
     const width = this.scene.scale.width;
-    const count = 20;
+    const count = 30;
 
     if (this.guides.length <= 0) {
       for (let i = 0; i < count; ++i) {
@@ -44,7 +48,7 @@ export default class ShotGuide implements IShotGuide {
       }
     }
 
-    const stepInterval = 40 * DPR;
+    const stepInterval = 30 * DPR;
     let vx = direction.x;
     const vy = direction.y;
     let alpha = 1;
@@ -56,11 +60,11 @@ export default class ShotGuide implements IShotGuide {
       let nx = x + vx * stepInterval;
       const ny = y + vy * stepInterval;
 
-      if (nx <= radius) {
+      if (nx <= this.grid.effGridX) {
         vx *= -1;
         nx = vx * radius;
         nx += vx * radius;
-      } else if (nx >= width - radius) {
+      } else if (nx >= this.grid.effGridRightX) {
         vx *= -1;
         nx = width + vx * radius;
         nx += vx * radius;
@@ -76,7 +80,7 @@ export default class ShotGuide implements IShotGuide {
       guide.y = y;
       guide.alpha = alpha;
 
-      alpha *= 0.95;
+      alpha *= 0.975;
     }
   }
 

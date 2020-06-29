@@ -9,6 +9,8 @@ import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
 import ColorConfig from '../Config/ColorConfig';
 import TextureKeys from '../Config/TextureKeys';
 import Shooter from './Shooter';
+import AlignTool from '../Util/AlignTool';
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from '../Util/Constant';
 
 interface IGridPosition {
   row: number;
@@ -43,12 +45,16 @@ export default class BubbleGrid {
   public gridWidth: number;
   public gridHeight: number;
   public gridX: number;
+  public effGridX: number;
+
   public gridRightX: number;
+  public effGridRightX: number;
   public gridY: number;
   public effGridY: number;
+  public sideGap = 3;
 
   public descentInterval: number;
-  private borderWidth = 22;
+  public borderWidth = 22;
 
   private bubbleLeftmostX: number;
   private bubbleRightmostX: number;
@@ -104,10 +110,16 @@ export default class BubbleGrid {
     this.pool.despawn(sample);
 
     this.midPoint = this.scene.scale.width * 0.5 + this.size.width * 0.2;
-    this.gridHeight = this.scene.scale.height * 2;
+    console.log(
+      'midpoint',
+      this.midPoint,
+      'vs.',
+      AlignTool.getCenterHorizontal(this.scene) + this.size.width * 0.2
+    );
+    this.gridHeight = DEFAULT_HEIGHT;
 
     // Calculate how wide is the bubble grid:
-    this.gridWidth = this.size.width * this.bubblesPerRow;
+    this.gridWidth = this.size.width * bubblesPerRow + this.size.width * 0.5;
     this.gridX =
       this.midPoint -
       this.bubblesPerRow * 0.5 * this.size.width -
@@ -116,16 +128,16 @@ export default class BubbleGrid {
     // spawn border:
     scene.add.tileSprite(
       this.gridX,
-      this.gridY,
+      AlignTool.getCenterVertical(this.scene),
       this.borderWidth,
       this.gridHeight,
       TextureKeys.LeftBorder
     );
-    this.gridRightX =
-      this.gridX + this.size.width * bubblesPerRow + this.size.width * 0.5;
+    this.gridRightX = this.gridX + this.gridWidth;
+    // this.gridRightX = this.gridX + this.gridWidth;
     scene.add.tileSprite(
       this.gridRightX,
-      this.gridY,
+      AlignTool.getCenterVertical(this.scene), // center point
       this.borderWidth,
       this.gridHeight,
       TextureKeys.RightBorder
@@ -133,26 +145,27 @@ export default class BubbleGrid {
     const topBorderIMG = scene.textures
       .get(TextureKeys.TopBorder)
       .getSourceImage();
-    scene.add.tileSprite(
+    const topBorder = scene.add.tileSprite(
       (this.gridX + this.gridRightX) / 2,
-      this.gridY + topBorderIMG.height,
+      this.gridY + topBorderIMG.height * 1.5,
       this.gridWidth,
-      topBorderIMG.height * 2,
+      topBorderIMG.height * 3,
       TextureKeys.TopBorder
     );
+    topBorder.setDepth(1);
 
-    this.effGridY = topBorderIMG.height * 2;
-
+    this.effGridY = topBorderIMG.height * 3;
+    this.effGridX = this.gridX + this.borderWidth / 2 + this.sideGap;
+    this.effGridRightX = this.gridRightX - this.borderWidth / 2 - this.sideGap;
     this.descentInterval =
-      scene.textures.get(TextureKeys.DropLoop).getSourceImage().height * 2;
+      scene.textures.get(TextureKeys.DropLoop).getSourceImage().height * 3;
 
-    this.bubbleLeftmostX =
-      this.midPoint -
-      (bubblesPerRow / 2) * this.size.width +
-      this.size.width * 0.25;
-    this.bubbleRightmostX =
-      this.bubbleLeftmostX + this.size.width * 0.5 * this.bubblesPerRow;
+    this.bubbleLeftmostX = this.effGridX + this.size.width / 2;
+    this.bubbleRightmostX = this.effGridRightX - this.size.width / 2;
+    console.log('bubblesize', this.size);
     console.log('bubble', this.bubbleLeftmostX, this.bubbleRightmostX);
+    console.log('effboundary', this.effGridX, this.effGridRightX);
+    console.log('boundary', this.gridX, this.gridRightX);
   }
 
   destroy(): void {
@@ -227,6 +240,7 @@ export default class BubbleGrid {
 
     // place on same row
     const sameRow = Math.abs(dy) <= radius;
+    console.log('sameROW?', 'dy:', Math.abs(dy), 'Radius', radius);
     if (sameRow) {
       ty = cellY;
       // adjust x to be next to
@@ -249,49 +263,83 @@ export default class BubbleGrid {
 
     let bCol: number = col;
     const isLeft = tx < cellX;
+    console.log('isLeft', tx, cellX);
+    const isStaggered = this.isRowStaggered(bRow);
     if (sameRow) {
-      if (isLeft)
-        if (bCol !== 0) bCol -= 1;
-        else bCol += 1;
-    } else {
-      const isStaggered = this.isRowStaggered(bRow);
-      if (isStaggered) {
-        bCol = isLeft ? col : col + 1;
+      if (isLeft) {
+        if (isStaggered) {
+          if (bCol !== 1) bCol -= 1;
+        } else {
+          if (bCol !== 0) bCol -= 1;
+        }
       } else {
-        if (isLeft) if (bCol !== 0) bCol -= 1;
+        if (bCol < this.bubblesPerRow - 1) bCol += 1;
+      }
+    } else {
+      if (isStaggered) {
+        if (!isLeft && bCol < this.bubblesPerRow - 1) bCol += 1;
+      } else {
+        if (isLeft) {
+          if (bCol !== 0) bCol -= 1;
+        }
       }
     }
 
     // console.lo('initialres:', bRow, bCol);
 
     // handle if destinated position already contains a bubble:
-    // if (this.getAt(bRow, bCol)) {
-    //   if (!sameRow) {
-    //     if (hx < cellX) {
-    //       bCol -= 1;
-    //     } else {
-    //       bCol += 1;
-    //     }
-    //   } else {
-    //     // same row handling:
-    //     if (ty < cellY) {
-    //       bRow = row - 1;
-    //     } else {
-    //       bRow = row + 1;
-    //     }
-    //   }
-    // }
+    if (this.getAt(bRow, bCol)) {
+      console.log(
+        "bubble already existed at the position we're inserting in!",
+        bRow,
+        bCol
+      );
+      // if (!sameRow) {
+      //   if (hx < cellX) {
+      //     if (isStaggered) {
+      //       if (bCol !== 1) {
+      //         tx -= this.size.width;
+      //         bCol -= 1;
+      //       }
+      //     } else {
+      //       if (bCol !== 0) {
+      //         tx -= this.size.width;
+      //         bCol -= 1;
+      //       }
+      //     }
+      //   } else {
+      //     if (bCol < this.bubblesPerRow - 1) {
+      //       tx += this.size.width;
+      //       bCol += 1;
+      //     }
+      //   }
+      // } else {
+      // if previously same row -> go to next row:
+      if (ty < cellY) {
+        ty -= this.bubbleInterval;
+        bRow = row - 1;
+      } else {
+        ty += this.bubbleInterval;
+        bRow = row + 1;
+      }
+    }
     // if (tx > this.scale.width) tx = this.scale.width;
     if (tx < this.bubbleLeftmostX) {
       if (this.isRowStaggered(bRow))
         tx = this.bubbleLeftmostX + this.size.width * 0.5;
       else tx = this.bubbleLeftmostX;
     }
+
+    if (tx > this.bubbleRightmostX) {
+      if (this.isRowStaggered(bRow))
+        tx = this.bubbleRightmostX - this.size.width * 0.5;
+      else tx = this.bubbleRightmostX;
+    }
     // if (ty > this.scale.height) ty = this.scale.height;
     console.log('after', x, y, tx, ty);
     const newBubble = this.pool.spawn(x, y, color);
     this.insertAt(bRow, bCol, newBubble);
-    console.table(this.grid);
+
     const matches = this.findMatchesAt(bRow, bCol, color as number);
     // minimum 3 matches required
     if (matches.length < 3) {
@@ -299,6 +347,7 @@ export default class BubbleGrid {
       this.bubblesAddedSubject.next(1);
       this.bubbleAttachedSubject.next(newBubble);
       await this.animateAttachBounceAt(bRow, bCol, tx, ty, newBubble);
+      console.table(this.grid);
       return;
     }
 
@@ -347,7 +396,9 @@ export default class BubbleGrid {
       await this.animateOrphans(orphans);
     }
 
+    console.table(this.grid);
     console.log('DONE ATTACH BUBBLE -------------');
+    Shooter.isShooting = false;
   }
 
   /**
@@ -358,7 +409,6 @@ export default class BubbleGrid {
     if (!this.layoutData) {
       return this;
     }
-
     for (let i = 0; i < rows; ++i) {
       this.spawnRow();
     }
@@ -415,6 +465,25 @@ export default class BubbleGrid {
     return row.length;
   }
 
+  spawnRowUpperBound(): number {
+    // if layout data is unavailable, terminate:
+    if (!this.layoutData) {
+      return -1;
+    }
+
+    const currRowIsStaggered = false;
+    const row = this.layoutData.getNextRow(currRowIsStaggered);
+    const count = row.length;
+
+    if (count <= 0) {
+      return 0;
+    }
+
+    this.addRowToFront(row, currRowIsStaggered);
+
+    return row.length;
+  }
+
   private addRowToFront(row: ColorConfig[], isStaggered: boolean) {
     const width = this.size.width;
     const radius = width * 0.5;
@@ -454,11 +523,11 @@ export default class BubbleGrid {
       }
     });
 
-    if (gridRow.isStaggered) {
-      // pad end with space for offset
-      // gridRow.pop();
-      gridRow.push(undefined);
-    }
+    // if (gridRow.isStaggered) {
+    //   // pad end with space for offset
+    //   // gridRow.pop();
+    //   gridRow.push(undefined);
+    // }
   }
 
   private removeFromGrid(matches: IGridPosition[]) {
@@ -672,40 +741,42 @@ export default class BubbleGrid {
     const isStaggered = this.isRowStaggered(row);
     const adjacentMatches: IGridPosition[] = [];
 
-    // top left
-    if (isStaggered) {
-      const tl = this.getAt(row - 1, col - 1);
-      if (tl && colorIsMatch(tl.color, color) && !found.has(tl)) {
+    // ignore bubbles on first row (placeholder hidden row)
+    if (row - 1 !== 0) {
+      // top left
+      if (isStaggered) {
+        const tl = this.getAt(row - 1, col - 1);
+        if (tl && colorIsMatch(tl.color, color) && !found.has(tl)) {
+          adjacentMatches.push({
+            row: row - 1,
+            col: col - 1
+          });
+          found.add(tl);
+        }
+      }
+
+      // top
+      const t = this.getAt(row - 1, col);
+      if (t && colorIsMatch(t.color, color) && !found.has(t)) {
         adjacentMatches.push({
           row: row - 1,
-          col: col - 1
+          col
         });
-        found.add(tl);
+        found.add(t);
+      }
+
+      // top right
+      if (!isStaggered) {
+        const tr = this.getAt(row - 1, col + 1);
+        if (tr && colorIsMatch(tr.color, color) && !found.has(tr)) {
+          adjacentMatches.push({
+            row: row - 1,
+            col: col + 1
+          });
+          found.add(tr);
+        }
       }
     }
-
-    // top
-    const t = this.getAt(row - 1, col);
-    if (t && colorIsMatch(t.color, color) && !found.has(t)) {
-      adjacentMatches.push({
-        row: row - 1,
-        col
-      });
-      found.add(t);
-    }
-
-    // top right
-    if (!isStaggered) {
-      const tr = this.getAt(row - 1, col + 1);
-      if (tr && colorIsMatch(tr.color, color) && !found.has(tr)) {
-        adjacentMatches.push({
-          row: row - 1,
-          col: col + 1
-        });
-        found.add(tr);
-      }
-    }
-
     // right
     const r = this.getAt(row, col + 1);
     if (r && colorIsMatch(r.color, color) && !found.has(r)) {
@@ -894,7 +965,7 @@ export default class BubbleGrid {
     this.spawnRow();
   }
 
-  public descend() {
+  public descend(): void {
     this.moveBy(this.descentInterval);
 
     this.scene.add.tileSprite(

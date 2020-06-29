@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs';
 
 interface IGameUI {
-  ballsDestroyed?: Observable<number>;
-  ballsAdded?: Observable<number>;
+  bubblesDestroyed?: Observable<number>;
+  bubblesAdded?: Observable<number>;
   infectionsChanged: Observable<number>;
 }
 

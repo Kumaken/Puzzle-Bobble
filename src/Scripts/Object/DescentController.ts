@@ -5,6 +5,8 @@ import { SubscriptionLike, Subject, Observable } from 'rxjs';
 import BubbleSpawnModel from './BubbleSpawnModel';
 import Shooter from './Shooter';
 import GameUI from '../Scene/GameUI';
+import SceneKeys from '../Config/SceneKeys';
+import LevelScene from '../Scene/LevelScene';
 
 enum DescentState {
   Descending,
@@ -85,23 +87,29 @@ export default class DescentController {
     });
   }
 
-  private descentLevelSequence = [1, 2, 5, 10, 20];
+  private descentLevelSequence = [1, 2, 5, 7, 10, 12, 15, 20];
   private nextDescent = 2;
-  private alreadyDescendedOnThisLevel = false;
 
-  update(dt: number) {
+  update(dt: number): void {
     this.accumulatedTime += dt;
 
     const rate = BubbleSpawnModel.getBubbleSpawnRate(GameUI.level);
     if (this.accumulatedTime > rate && !Shooter.isShooting) {
       console.log('Descending!');
       this.accumulatedTime = 0;
-      this.BubbleGrid.spawnNextWave();
+      // this.BubbleGrid.spawnNextWave();
       if (GameUI.level === this.nextDescent) {
         this.BubbleGrid.descend();
+        this.updateSceneWorldBounds();
         this.nextDescent += this.descentLevelSequence[GameUI.level - 1];
       }
     }
+  }
+
+  private updateSceneWorldBounds() {
+    const gameScene = this.scene.scene.get(SceneKeys.Game) as LevelScene;
+    gameScene.descendWorldBounds();
+    console.log('bounds', this.scene.physics.world.bounds.y);
   }
 
   // private handleBubblesDestroyed(count: number) {

@@ -20,7 +20,15 @@ enum TextureKeys {
   RightBorder = 'right-border',
   BottomBorder = 'bottom-border',
   DropBottom = 'drop-bottom',
-  DropLoop = 'drop-loop'
+  DropLoop = 'drop-loop',
+  BaseBackground = 'base-background',
+  Layer1 = 'layer-1',
+  Layer2 = 'layer-2',
+  Layer3 = 'layer-3',
+  Layer4 = 'layer-4',
+  Layer5 = 'layer-5',
+  Layer6 = 'layer-6',
+  Layer7 = 'layer-7'
 }
 
 function colorToBubbleTexture(bubbleColor: ColorConfig): TextureKeys {

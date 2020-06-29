@@ -15,8 +15,10 @@ import { IShooter } from '../Interfaces/IShooter';
 import ShotGuide from '../Object/guides/ShotGuide';
 import GameUI from './GameUI';
 import DescentController from '../Object/DescentController';
+import SFXController from '../Object/SFXController';
 import Shooter from '../Object/Shooter';
-
+import AudioKeys from '../Config/AudioKeys';
+import AlignTool from '../Util/AlignTool';
 enum GameState {
   Playing,
   GameOver,
@@ -26,8 +28,11 @@ enum GameState {
 // GAME SETTINGS
 const gameSettings = {
   bubblesPerRow: 10,
-  initialBubbleHeight: 360,
-  maxBubbleCount: 150
+  initialBubbleRows: 6,
+  maxBubbleCount: 150,
+  initialDescent: 45,
+  rowHeight: 55,
+  gap: 4
 };
 const DPR = window.devicePixelRatio;
 
@@ -40,6 +45,17 @@ export default class LevelScene extends Phaser.Scene {
   private inCollision: boolean;
   private gameUI: GameUI;
   private descentController?: DescentController;
+  private sfxController?: SFXController;
+
+  // background
+  private baseBG;
+  private layer1;
+  private layer2;
+  private layer3;
+  private layer4;
+  private layer5;
+  private layer6;
+  private layer7;
 
   constructor() {
     super({ key: SceneKeys.Game });
@@ -48,10 +64,14 @@ export default class LevelScene extends Phaser.Scene {
   init(): void {
     this.state = GameState.Playing;
     this.bubbleSpawnModel = new BubbleSpawnModel(gameSettings.maxBubbleCount);
+    this.sfxController = new SFXController(this.sound);
   }
 
   create(): void {
     this.fpsText = new FpsText(this);
+
+    // Setup background:
+    this.setupBackground();
 
     const width = this.scale.width;
     const height = this.scale.height;
@@ -72,7 +92,7 @@ export default class LevelScene extends Phaser.Scene {
 
     // Setup world boundary
     this.physics.world.setBounds(
-      this.grid.gridX,
+      this.grid.effGridX,
       this.grid.effGridY,
       this.grid.gridWidth,
       this.grid.gridHeight
@@ -116,7 +136,7 @@ export default class LevelScene extends Phaser.Scene {
       height - shooterIMG.height / 2 - 30,
       TextureKeys.Shooter
     );
-    this.shooter.setGuide(new ShotGuide(this));
+    this.shooter.setGuide(new ShotGuide(this, this.grid));
 
     // Shooter Bubble Pool:
     const bubblePool = this.add.bubblePool(TextureKeys.BubbleBlack);
@@ -141,7 +161,11 @@ export default class LevelScene extends Phaser.Scene {
       this.bubbleSpawnModel,
       this.grid.bubbleInterval
     );
-    this.descentController.setStartingDescent(gameSettings.initialBubbleHeight);
+    this.descentController.setStartingDescent(
+      gameSettings.initialDescent +
+        (gameSettings.initialBubbleRows - 1) * gameSettings.rowHeight +
+        gameSettings.gap
+    );
 
     const bubbleSub = this.grid
       .onBubbleWillBeDestroyed()
@@ -157,17 +181,29 @@ export default class LevelScene extends Phaser.Scene {
 
     // Activate Game UI:
     this.scene.run(SceneKeys.GameUI, {
-      ballsDestroyed: this.grid.onBubblesDestroyed(),
-      ballsAdded: this.grid.onBubblesAdded()
+      bubblesDestroyed: this.grid.onBubblesDestroyed(),
+      bubblesAdded: this.grid.onBubblesAdded()
       // infectionsChanged: this.bubbleSpawnModel.onPopulationChanged()
     });
     this.gameUI = this.scene.get(SceneKeys.GameUI) as GameUI;
 
     this.scene.bringToTop(SceneKeys.GameUI);
+
+    // Setup Audio:
+    this.sound.play(AudioKeys.InGameBGM, {
+      loop: true,
+      volume: 0.1
+    });
+
+    this.sfxController?.handleShootBubble(this.shooter.onShoot());
+    this.sfxController?.handleBubbleAttached(this.grid.onBubbleAttached());
+    this.sfxController?.handleClearMatches(this.grid.onBubblesDestroyed());
+    this.sfxController?.handleClearOrphan(this.grid.onOrphanWillBeDestroyed());
   }
 
   update(t: number, dt: number): void {
     this.fpsText.update();
+    this.updateBackground();
 
     if (this.state === GameState.GameOver || this.state === GameState.GameWin) {
       return;
@@ -214,6 +250,14 @@ export default class LevelScene extends Phaser.Scene {
     this.grid?.destroy();
   }
 
+  public descendWorldBounds(): void {
+    this.physics.world.setBounds(
+      this.grid.effGridX,
+      this.grid.effGridY,
+      this.grid.gridWidth,
+      this.grid.gridHeight
+    );
+  }
   // private delay(ms: number) {
   //   return new Promise((resolve) => setTimeout(resolve, ms));
   // }
@@ -250,7 +294,7 @@ export default class LevelScene extends Phaser.Scene {
       const bx = b.x;
       if (bx == 0) return;
 
-      // prevent multiple chain collision and collision when resetting ball on 0,0 position
+      // prevent multiple chain collision and collision when resetting Bubble on 0,0 position
       b.stop();
       const color = b.color;
       const by = b.y;
@@ -270,6 +314,7 @@ export default class LevelScene extends Phaser.Scene {
       // get where the bubble would be at contact with grid
       const x = gx + directionToGrid.x * gb.width;
       const y = gy + directionToGrid.y * gb.width;
+      console.log('positioning at x:', bx, x);
       // handle if x or y is goes out of world bounds:
 
       this.shooter?.returnBubble(b);
@@ -287,6 +332,48 @@ export default class LevelScene extends Phaser.Scene {
 
   private handleGameOver() {
     this.scene.pause(SceneKeys.GameUI);
+    this.sound.stopAll();
     this.scene.run(SceneKeys.GameOver);
+  }
+
+  private setupBackground() {
+    const raw_bg_img = this.textures
+      .get(TextureKeys.BaseBackground)
+      .getSourceImage();
+    this.baseBG = this.add.tileSprite(
+      AlignTool.getCenterHorizontal(this),
+      AlignTool.getCenterVertical(this),
+      raw_bg_img.width,
+      raw_bg_img.height,
+      TextureKeys.BaseBackground
+    );
+
+    for (let i = 1; i <= 7; i++) {
+      const raw_img = this.textures
+        .get(TextureKeys[`Layer${i}`])
+        .getSourceImage();
+      this[`layer${i}`] = this.add.tileSprite(
+        AlignTool.getCenterHorizontal(this),
+        AlignTool.getCenterVertical(this),
+        raw_img.width,
+        raw_img.height,
+        TextureKeys[`Layer${i}`]
+      );
+    }
+  }
+
+  private updateBackground() {
+    this.baseBG.tilePositionY -= 1;
+    this.layer1.tilePositionY -= 0.2;
+    this.layer1.tilePositionX += 0.5;
+    this.layer2.tilePositionY -= 0.1;
+    this.layer3.tilePositionY -= 0.1;
+    this.layer3.tilePositionX -= 0.2;
+    this.layer4.tilePositionY -= 0.25;
+    this.layer5.tilePositionY -= 0.15;
+    this.layer6.tilePositionY -= 0.4;
+    this.layer6.tilePositionX -= 0.5;
+    this.layer7.tilePositionY -= 0.2;
+    this.layer7.tilePositionX -= 0.3;
   }
 }

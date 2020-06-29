@@ -162,7 +162,7 @@ export default class Shooter extends Phaser.GameObjects.Container
       this.bubble.x,
       this.bubble.y,
       vec,
-      76 - physicsRadius / 2,
+      76 - physicsRadius / 2, // grid right x
       this.bubble.color
     );
   }

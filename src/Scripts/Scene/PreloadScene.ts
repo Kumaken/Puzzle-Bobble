@@ -3,6 +3,7 @@ import TextureKeys from '../Config/TextureKeys';
 import SceneKeys from '../Config/SceneKeys';
 import GameEvents from '../Config/GameEvents';
 import AnimationKeys from '../Config/AnimationKeys';
+import AudioKeys from '../Config/AudioKeys';
 
 export default class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -43,10 +44,6 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image(TextureKeys.TopBorder, 'src/Assets/Borders/top1.png');
     this.load.image(TextureKeys.LeftBorder, 'src/Assets/Borders/left1.png');
     this.load.image(TextureKeys.RightBorder, 'src/Assets/Borders/right1.png');
-    // this.load.image(
-    //   TextureKeys.BottomBorder,
-    //   'src/Assets/Borders/platform.png'
-    // );
     this.load.image(
       TextureKeys.DropBottom,
       'src/Assets/Borders/dropbottom1.png'
@@ -57,6 +54,25 @@ export default class PreloadScene extends Phaser.Scene {
       this.handlePreloadFinished,
       this
     );
+
+    // BG:
+    this.load.image(TextureKeys.BaseBackground, 'src/Assets/BG/bkgd_0.png');
+    for (let i = 1; i <= 7; i++) {
+      this.load.image(TextureKeys[`Layer${i}`], `src/Assets/BG/bkgd_${i}.png`);
+    }
+
+    // Audio:
+    // BGM:
+    this.load.audio(AudioKeys.InGameBGM, 'src/Assets/Audio/d2_cyberdance.mp3');
+    this.load.audio(AudioKeys.BubbleShoot, 'src/Assets/Audio/bubble_shoot.wav');
+    this.load.audio(
+      AudioKeys.BubbleAttach,
+      'src/Assets/Audio/bubble_attach.wav'
+    );
+    this.load.audio(AudioKeys.BubblePop, 'src/Assets/Audio/bubble_pop.wav');
+    this.load.audio(AudioKeys.GameOver, 'src/Assets/Audio/gameover.wav');
+    this.load.audio(AudioKeys.Click, 'src/Assets/Audio/click.wav');
+    this.load.audio(AudioKeys.BubbleWhoop, 'src/Assets/Audio/bubble_whoop.wav');
   }
 
   create(): void {
