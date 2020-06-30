@@ -125,7 +125,6 @@ export default class PreloadScene extends Phaser.Scene {
 
   private handlePreloadFinished() {
     this.scene.stop(SceneKeys.Preload);
-    console.log('preload finished');
 
     this.scene.start(SceneKeys.TitleScreen);
   }

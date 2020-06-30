@@ -103,12 +103,6 @@ export default class BubbleGrid {
     this.pool.despawn(sample);
 
     this.midPoint = this.scene.scale.width * 0.5 + this.bubbleSize.width * 0.2;
-    console.log(
-      'midpoint',
-      this.midPoint,
-      'vs.',
-      AlignTool.getCenterHorizontal(this.scene) + this.bubbleSize.width * 0.2
-    );
     this.gridHeight = DEFAULT_HEIGHT;
     this.gridWidth =
       this.bubbleSize.width * bubblesPerRow + this.bubbleSize.width * 0.5;
@@ -155,11 +149,6 @@ export default class BubbleGrid {
       TextureKeys.TopBorder
     );
     topBorder.setDepth(1);
-
-    console.log('bubblesize', this.bubbleSize);
-    console.log('bubble', this.bubbleLeftmostX, this.bubbleRightmostX);
-    console.log('effboundary', this.effGridX, this.effGridRightX);
-    console.log('boundary', this.gridX, this.gridRightX);
   }
 
   destroy(): void {
@@ -190,7 +179,6 @@ export default class BubbleGrid {
 
   setIsShootingFalse(): void {
     Shooter.isShooting = false;
-    console.log('isShooting is changed to false');
   }
 
   async updateIsShootingTimer(ms: number): Promise<unknown> {
@@ -237,7 +225,6 @@ export default class BubbleGrid {
 
     // place on same row
     const sameRow = Math.abs(dy) <= radius;
-    console.log('sameROW?', 'dy:', Math.abs(dy), 'Radius', radius);
     if (sameRow) {
       ty = cellY;
       // adjust x to be next to
@@ -245,8 +232,6 @@ export default class BubbleGrid {
     }
 
     const { row, col } = this.findRowAndColumns(gridBubble);
-    console.log('findRowAndColumns:', row, col);
-
     let bRow = -1;
     if (sameRow) {
       bRow = row;
@@ -260,7 +245,6 @@ export default class BubbleGrid {
 
     let bCol: number = col;
     const isLeft = tx < cellX;
-    console.log('isLeft', tx, cellX);
     const isStaggered = this.isRowStaggered(bRow);
     if (sameRow) {
       if (isLeft) {
@@ -286,11 +270,6 @@ export default class BubbleGrid {
 
     // handle if destinated position already contains a bubble:
     if (this.getBubbleAt(bRow, bCol)) {
-      console.log(
-        "bubble already existed at the position we're inserting in!",
-        bRow,
-        bCol
-      );
       // if previously same row -> go to next row:
       if (ty < cellY) {
         ty -= this.bubbleInterval;
@@ -313,7 +292,6 @@ export default class BubbleGrid {
         tx = this.bubbleRightmostX - this.bubbleSize.width * 0.5;
       else tx = this.bubbleRightmostX;
     }
-    console.log('after', x, y, tx, ty);
     const newBubble = this.pool.spawn(x, y, color);
     this.attachBubbleAt(bRow, bCol, newBubble);
 
@@ -554,13 +532,11 @@ export default class BubbleGrid {
       onComplete: () => {
         const body = newBubble.body as Phaser.Physics.Arcade.StaticBody;
         body.updateFromGameObject();
-        console.log('finished animation');
       }
     });
 
     await timeline.play();
     await this.jiggleAdjacentBubbles(row, col);
-    console.log('finished animate attach');
   }
 
   /**
@@ -568,7 +544,6 @@ export default class BubbleGrid {
    */
   private findRowAndColumns(bubble: IBubble) {
     // HEURISTIC: search from the bottom of the grid (more likely to find match early on)
-    console.log(bubble);
     const size = this.grid.length;
     for (let i = size - 1; i >= 0; --i) {
       const row = this.grid[i];
@@ -606,7 +581,6 @@ export default class BubbleGrid {
       }
     }
     rowList[col] = bubble;
-    console.log('inserting:', rowList, 'at', row, col);
   }
 
   private getBubbleAt(row: number, col: number) {
@@ -815,14 +789,10 @@ export default class BubbleGrid {
           targets: bubble,
           y,
           duration: 50,
-          ease: 'Back.easeOut',
-          onComplete: () => {
-            console.log('finished animation jiggle');
-          }
+          ease: 'Back.easeOut'
         });
 
         await timeline.play();
-        console.log('jiggle finished');
       }
     }
   }

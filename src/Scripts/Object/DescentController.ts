@@ -69,7 +69,6 @@ export default class DescentController {
       GameUI.level >=
       DescentController.descentLevelSequence[DescentController.descentIndex]
     ) {
-      console.log('Descending!');
       this.BubbleGrid.descend();
       this.updateSceneWorldBounds();
       this.sfxController.playDescendSFX();
@@ -80,6 +79,5 @@ export default class DescentController {
   private updateSceneWorldBounds() {
     const gameScene = this.scene.scene.get(SceneKeys.Game) as LevelScene;
     gameScene.descendWorldBounds();
-    console.log('bounds', this.scene.physics.world.bounds.y);
   }
 }

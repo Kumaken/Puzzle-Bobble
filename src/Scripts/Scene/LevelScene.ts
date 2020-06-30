@@ -214,7 +214,6 @@ export default class LevelScene extends Phaser.Scene {
 
     if (dcy > this.shooter.y - this.shooter.shooterHeight / 2) {
       // game over
-      console.log('gameover');
       this.state = GameState.GameOver;
       this.handleGameOver();
     }
