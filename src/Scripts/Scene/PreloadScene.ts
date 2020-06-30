@@ -12,10 +12,6 @@ export default class PreloadScene extends Phaser.Scene {
 
   preload(): void {
     /* all the routes here is referenced from root! */
-    // Load bubbles:
-    // for(let i=0; i<8; i++){
-    //   this.load.image(TextureKeys.BubbleRed, 'src/Assets/Bubbles/red_bubble/.png');
-    // }
     this.bubbleTextures.forEach((texture) => {
       this.load.atlas(
         texture,
@@ -73,6 +69,9 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.audio(AudioKeys.GameOver, 'src/Assets/Audio/gameover.wav');
     this.load.audio(AudioKeys.Click, 'src/Assets/Audio/click.wav');
     this.load.audio(AudioKeys.BubbleWhoop, 'src/Assets/Audio/bubble_whoop.wav');
+    this.load.audio(AudioKeys.Descend, 'src/Assets/Audio/descend.wav');
+    this.load.audio(AudioKeys.BubbleSpawn, 'src/Assets/Audio/bubble_spawn.wav');
+    this.load.audio(AudioKeys.LevelUp, 'src/Assets/Audio/levelup.wav');
   }
 
   create(): void {
@@ -116,7 +115,7 @@ export default class PreloadScene extends Phaser.Scene {
         });
 
       this.anims.create({
-        key: `${texture}_idle`,
+        key: `${texture}_${AnimationKeys.Idle}`,
         frames: BubbleFrames,
         frameRate: 6,
         repeat: -1
@@ -128,6 +127,6 @@ export default class PreloadScene extends Phaser.Scene {
     this.scene.stop(SceneKeys.Preload);
     console.log('preload finished');
 
-    this.scene.start(SceneKeys.Game);
+    this.scene.start(SceneKeys.TitleScreen);
   }
 }

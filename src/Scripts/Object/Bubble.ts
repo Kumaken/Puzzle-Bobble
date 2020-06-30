@@ -49,18 +49,18 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     this._texture = texture as TextureKeys;
   }
 
-  setRandomColor(): IBubble {
+  randomizeColor(): IBubble {
     const r = Phaser.Math.Between(0, ALL_COLORS.length - 1);
-    return this.setColor(ALL_COLORS[r] as number);
+    return this.applyColor(ALL_COLORS[r] as number);
   }
 
-  setColor(color: number): IBubble {
+  applyColor(color: number): IBubble {
     this._color = color;
     this._texture = colorToBubbleTexture(color);
     return this.setTexture(this._texture);
   }
 
-  useCircleCollider(): IBubble {
+  giveCircleCollider(): IBubble {
     const radius = this.radius;
     const colliderRadius = this.physicsRadius;
     const diff = radius - colliderRadius; // for collider offset
@@ -68,7 +68,7 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     // return this.setCircle(1000, -1000, -100);
   }
 
-  launch(direction: Phaser.Math.Vector2, speed = 2500): void {
+  launchBubble(direction: Phaser.Math.Vector2, speed = 1500): void {
     this.setCollideWorldBounds(true, 1, 1); // collide with world and bounce
     // reposition before launching:
     this.body.x = this.x;
@@ -77,7 +77,7 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     this.setVelocity(direction.x * speed, direction.y * speed);
   }
 
-  stop(): void {
+  stopBubble(): void {
     this.setVelocity(0);
   }
 
@@ -86,26 +86,3 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
     this.y = y;
   }
 }
-
-// this one never got called?
-// Phaser.GameObjects.GameObjectFactory.register('bubble', function (
-//   x: number,
-//   y: number,
-//   texture: string,
-//   frame = ''
-// ) {
-//   const bubble = new Bubble(this.scene, x, y, texture, frame);
-
-//   this.displayList.add(bubble);
-
-//   this.updateList.add(bubble);
-
-//   this.scene.physics.world.enableBody(
-//     bubble,
-//     Phaser.Physics.Arcade.DYNAMIC_BODY
-//   );
-
-//   bubble.setCircle(bubble.width * 0.5);
-
-//   return bubble;
-// });

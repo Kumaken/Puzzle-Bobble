@@ -28,7 +28,7 @@ enum ColorConfig {
   Any = '-1'
 }
 
-const colorIsMatch = (first: ColorConfig, second: ColorConfig): boolean => {
+const colorMatches = (first: ColorConfig, second: ColorConfig): boolean => {
   if (first === ColorConfig.Any || second === ColorConfig.Any) {
     return true;
   }
@@ -38,4 +38,4 @@ const colorIsMatch = (first: ColorConfig, second: ColorConfig): boolean => {
 
 export default ColorConfig;
 
-export { colorIsMatch };
+export { colorMatches };

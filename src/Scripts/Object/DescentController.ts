@@ -1,108 +1,79 @@
 import 'phaser';
 import BubbleGrid from './BubbleGrid';
 import { IBubbleSpawnModel } from '../Interfaces/IBubbleSpawnModel';
-import { SubscriptionLike, Subject, Observable } from 'rxjs';
-import BubbleSpawnModel from './BubbleSpawnModel';
 import Shooter from './Shooter';
 import GameUI from '../Scene/GameUI';
 import SceneKeys from '../Config/SceneKeys';
 import LevelScene from '../Scene/LevelScene';
-
-enum DescentState {
-  Descending,
-  Reversing,
-  Holding
-}
+import { Observable, BehaviorSubject } from 'rxjs';
+import SFXController from './SFXController';
 
 export default class DescentController {
   private scene: Phaser.Scene;
   private BubbleGrid: BubbleGrid;
-  private growthModel: IBubbleSpawnModel;
-
-  private speed: number;
-
-  private state = DescentState.Descending;
-
-  private subscriptions: SubscriptionLike[] = [];
-
-  private reversingSubject = new Subject<void>();
-
+  private bubbleSpawnModel: IBubbleSpawnModel;
   private accumulatedTime = 0;
+  private countdownSubject: BehaviorSubject<number>;
+  private sfxController?: SFXController;
 
-  get yPosition(): number {
-    return this.BubbleGrid.bottom;
+  onCountdownChanged(): Observable<number> {
+    return this.countdownSubject.asObservable();
   }
 
-  private bubbleInterval: number;
-
-  private levelUpSubject = new Subject<number>();
+  destroy(): void {
+    this.countdownSubject.complete();
+  }
 
   constructor(
     scene: Phaser.Scene,
     grid: BubbleGrid,
-    growthModel: IBubbleSpawnModel,
-    bubbleInterval: number
+    bubbleSpawnModel: IBubbleSpawnModel,
+    sfxController: SFXController
   ) {
     this.scene = scene;
     this.BubbleGrid = grid;
-    this.growthModel = growthModel;
-    this.bubbleInterval = bubbleInterval;
-    // const bds = this.BubbleGrid.onBubblesDestroyed().subscribe((count) => {
-    //   this.handleBubblesDestroyed(count);
-    // });
-
-    // const pcs = this.growthModel.onPopulationChanged().subscribe((count) => {
-    //   this.handleVirusPopulationChanged(count);
-    // });
-
-    // this.subscriptions = [bds, pcs];
+    this.bubbleSpawnModel = bubbleSpawnModel;
+    DescentController.descentIndex = 0;
+    this.countdownSubject = new BehaviorSubject<number>(0);
+    this.sfxController = sfxController;
   }
 
-  destroy() {
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
-    this.subscriptions.length = 0;
+  setInitialDescent(dy: number): void {
+    this.BubbleGrid.descendBy(dy);
   }
 
-  setStartingDescent(dy: number) {
-    this.BubbleGrid.moveBy(dy);
-  }
-
-  hold() {
-    this.state = DescentState.Holding;
-  }
-
-  descend() {
-    this.state = DescentState.Descending;
-  }
-
-  reversing() {
-    if (this.state !== DescentState.Reversing) {
-      return new Promise((resolve) => {
-        resolve();
-      });
-    }
-
-    return new Promise((resolve) => {
-      this.reversingSubject.asObservable().subscribe(resolve);
-    });
-  }
-
-  private descentLevelSequence = [1, 2, 5, 7, 10, 12, 15, 20];
-  private nextDescent = 2;
+  // at what levels should the topmost border descend?
+  static descentLevelSequence = [2, 5, 7, 9, 12, 15, 17, 18, 19, 20];
+  static descentIndex = 0;
 
   update(dt: number): void {
     this.accumulatedTime += dt;
+    const rate = this.bubbleSpawnModel.getBubbleSpawnRate(GameUI.level);
+    const countdown = Math.floor((rate - this.accumulatedTime) / 1000); // in seconds
+    if (countdown >= 0) this.countdownSubject.next(countdown);
 
-    const rate = BubbleSpawnModel.getBubbleSpawnRate(GameUI.level);
     if (this.accumulatedTime > rate && !Shooter.isShooting) {
-      console.log('Descending!');
       this.accumulatedTime = 0;
-      // this.BubbleGrid.spawnNextWave();
-      if (GameUI.level === this.nextDescent) {
-        this.BubbleGrid.descend();
-        this.updateSceneWorldBounds();
-        this.nextDescent += this.descentLevelSequence[GameUI.level - 1];
-      }
+      this.BubbleGrid.spawnNextWave();
+      this.sfxController.playSpawnBubbleSFX();
+    }
+
+    if (
+      DescentController.descentIndex >=
+        DescentController.descentLevelSequence.length ||
+      Shooter.isShooting
+    ) {
+      return;
+    }
+    if (
+      GameUI.level >=
+      DescentController.descentLevelSequence[DescentController.descentIndex]
+    ) {
+      console.log('Descending!');
+      this.BubbleGrid.descend();
+      this.updateSceneWorldBounds();
+      this.sfxController.playDescendSFX();
+      DescentController.descentIndex++;
     }
   }
 
@@ -111,42 +82,4 @@ export default class DescentController {
     gameScene.descendWorldBounds();
     console.log('bounds', this.scene.physics.world.bounds.y);
   }
-
-  // private handleBubblesDestroyed(count: number) {
-  //   this.state = DescentState.Reversing;
-
-  //   let dy = count;
-  //   if (count > 10) {
-  //     dy *= Math.min(count / 10, 3);
-  //   }
-
-  //   const grid = this.BubbleGrid;
-  //   const bottom = grid.bottom;
-
-  //   this.scene.tweens.addCounter({
-  //     from: bottom,
-  //     to: bottom - dy,
-  //     duration: 300,
-  //     ease: 'Back.easeOut',
-  //     onUpdate: function (tween: Phaser.Tweens.Tween) {
-  //       const v = tween.getValue();
-  //       const diff = v - grid.bottom;
-  //       grid.moveBy(diff);
-  //     },
-  //     onUpdateScope: this,
-  //     onComplete: function () {
-  //       // if state is no longer Reversing then don't change
-  //       if (this.state === DescentState.Reversing) {
-  //         this.state = DescentState.Descending;
-  //       }
-  //       this.reversingSubject.next();
-  //     },
-  //     onCompleteScope: this
-  //   });
-  // }
-
-  // private handleVirusPopulationChanged(count: number) {
-  //   const s = Math.max(0.3, Math.log(count * 0.0004));
-  //   this.speed = s > 1.1 ? 1.1 : s;
-  // }
 }

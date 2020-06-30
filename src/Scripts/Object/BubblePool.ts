@@ -41,7 +41,7 @@ export default class BubblePool extends Phaser.Physics.Arcade.Group
       return bubble;
     }
 
-    bubble.useCircleCollider();
+    bubble.giveCircleCollider();
     bubble.emit('on-spawned');
 
     if (spawnExisting) {
@@ -50,7 +50,7 @@ export default class BubblePool extends Phaser.Physics.Arcade.Group
       this.world.add(bubble.body);
     }
 
-    bubble.setRandomColor();
+    bubble.randomizeColor();
     bubble.anims.play(bubble._texture + '_idle', true);
     return bubble;
   }
@@ -63,6 +63,7 @@ export default class BubblePool extends Phaser.Physics.Arcade.Group
   }
 }
 
+// Register to gameobject factory (Module Augmentation)
 Phaser.GameObjects.GameObjectFactory.register('bubblePool', function (
   texture: string,
   config:

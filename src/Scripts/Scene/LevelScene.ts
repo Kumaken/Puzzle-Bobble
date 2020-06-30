@@ -12,12 +12,11 @@ import TextureKeys from '../Config/TextureKeys';
 import BubbleLayoutData from '../Object/BubbleLayoutData';
 import { IBubble } from '../Interfaces/IBubble';
 import { IShooter } from '../Interfaces/IShooter';
-import ShotGuide from '../Object/guides/ShotGuide';
+import ShotGuide from '../Object/ShotGuide';
 import GameUI from './GameUI';
 import DescentController from '../Object/DescentController';
 import SFXController from '../Object/SFXController';
 import Shooter from '../Object/Shooter';
-import AudioKeys from '../Config/AudioKeys';
 import AlignTool from '../Util/AlignTool';
 enum GameState {
   Playing,
@@ -34,7 +33,6 @@ const gameSettings = {
   rowHeight: 55,
   gap: 4
 };
-const DPR = window.devicePixelRatio;
 
 export default class LevelScene extends Phaser.Scene {
   private fpsText: FpsText;
@@ -42,7 +40,6 @@ export default class LevelScene extends Phaser.Scene {
   private state;
   private bubbleSpawnModel!: IBubbleSpawnModel;
   private shooter?: IShooter;
-  private inCollision: boolean;
   private gameUI: GameUI;
   private descentController?: DescentController;
   private sfxController?: SFXController;
@@ -63,7 +60,7 @@ export default class LevelScene extends Phaser.Scene {
 
   init(): void {
     this.state = GameState.Playing;
-    this.bubbleSpawnModel = new BubbleSpawnModel(gameSettings.maxBubbleCount);
+    this.bubbleSpawnModel = new BubbleSpawnModel();
     this.sfxController = new SFXController(this.sound);
   }
 
@@ -85,10 +82,10 @@ export default class LevelScene extends Phaser.Scene {
       gameSettings.bubblesPerRow
     );
     this.grid
-      .setLayoutData(
+      .setBubbleLayoutData(
         new BubbleLayoutData(this.bubbleSpawnModel, gameSettings.bubblesPerRow)
       )
-      .generate();
+      .generateInitialBubbles();
 
     // Setup world boundary
     this.physics.world.setBounds(
@@ -136,14 +133,14 @@ export default class LevelScene extends Phaser.Scene {
       height - shooterIMG.height / 2 - 30,
       TextureKeys.Shooter
     );
-    this.shooter.setGuide(new ShotGuide(this, this.grid));
+    this.shooter.setShooterGuide(new ShotGuide(this, this.grid));
 
     // Shooter Bubble Pool:
     const bubblePool = this.add.bubblePool(TextureKeys.BubbleBlack);
     this.shooter.setBubblePool(bubblePool);
-    this.shooter.attachBubble();
+    this.shooter.prepareNextBubble();
     this.shooter.attachNextBubble();
-    this.shooter.attachBubble();
+    this.shooter.prepareNextBubble();
 
     // Collider Setup:
     this.physics.add.collider(
@@ -159,9 +156,9 @@ export default class LevelScene extends Phaser.Scene {
       this,
       this.grid,
       this.bubbleSpawnModel,
-      this.grid.bubbleInterval
+      this.sfxController
     );
-    this.descentController.setStartingDescent(
+    this.descentController.setInitialDescent(
       gameSettings.initialDescent +
         (gameSettings.initialBubbleRows - 1) * gameSettings.rowHeight +
         gameSettings.gap
@@ -180,25 +177,24 @@ export default class LevelScene extends Phaser.Scene {
     });
 
     // Activate Game UI:
+
     this.scene.run(SceneKeys.GameUI, {
       bubblesDestroyed: this.grid.onBubblesDestroyed(),
-      bubblesAdded: this.grid.onBubblesAdded()
-      // infectionsChanged: this.bubbleSpawnModel.onPopulationChanged()
+      countdownChanged: this.descentController?.onCountdownChanged()
     });
     this.gameUI = this.scene.get(SceneKeys.GameUI) as GameUI;
+    this.gameUI.setSFXController(this.sfxController);
 
     this.scene.bringToTop(SceneKeys.GameUI);
 
     // Setup Audio:
-    this.sound.play(AudioKeys.InGameBGM, {
-      loop: true,
-      volume: 0.1
-    });
-
     this.sfxController?.handleShootBubble(this.shooter.onShoot());
     this.sfxController?.handleBubbleAttached(this.grid.onBubbleAttached());
     this.sfxController?.handleClearMatches(this.grid.onBubblesDestroyed());
-    this.sfxController?.handleClearOrphan(this.grid.onOrphanWillBeDestroyed());
+    this.sfxController?.handleClearDangling(
+      this.grid.onDanglingWillBeDestroyed()
+    );
+    this.sfxController.playBGMMusic();
   }
 
   update(t: number, dt: number): void {
@@ -208,14 +204,13 @@ export default class LevelScene extends Phaser.Scene {
     if (this.state === GameState.GameOver || this.state === GameState.GameWin) {
       return;
     }
-    this.bubbleSpawnModel.update(dt);
     this.descentController.update(dt);
     this.shooter.update(dt);
 
     // debug coords:
-    this.gameUI.updateMouseCoordsText(this);
+    // this.gameUI.updateMouseCoordsText(this);
 
-    const dcy = this.grid?.bottom;
+    const dcy = this.grid?.gridBottom;
 
     if (dcy > this.shooter.y - this.shooter.shooterHeight / 2) {
       // game over
@@ -246,8 +241,8 @@ export default class LevelScene extends Phaser.Scene {
 
   private handleShutdown() {
     this.scene.stop(SceneKeys.GameUI);
-    this.descentController?.destroy();
     this.grid?.destroy();
+    this.descentController.destroy();
   }
 
   public descendWorldBounds(): void {
@@ -257,32 +252,6 @@ export default class LevelScene extends Phaser.Scene {
       this.grid.gridWidth,
       this.grid.gridHeight
     );
-  }
-  // private delay(ms: number) {
-  //   return new Promise((resolve) => setTimeout(resolve, ms));
-  // }
-
-  private async processBubbleHitGrid(
-    bubble: Phaser.GameObjects.GameObject,
-    gridBubble: Phaser.GameObjects.GameObject
-  ) {
-    // only accept collision if distance is close enough
-    // gives a better feel for tight shots
-    const b = bubble as IBubble;
-    b.stop();
-    const gb = gridBubble as IBubble;
-
-    const active = b.active && gb.active;
-
-    if (!active) {
-      return false;
-    }
-
-    const distanceSq = Phaser.Math.Distance.Squared(b.x, b.y, gb.x, gb.y);
-    const minDistance = b.width * 0.9;
-    const mdSq = minDistance * minDistance;
-
-    return distanceSq <= mdSq;
   }
 
   private async handleBubbleHitGrid(
@@ -295,7 +264,7 @@ export default class LevelScene extends Phaser.Scene {
       if (bx == 0) return;
 
       // prevent multiple chain collision and collision when resetting Bubble on 0,0 position
-      b.stop();
+      b.stopBubble();
       const color = b.color;
       const by = b.y;
       const gb = gridBubble as IBubble;
@@ -305,35 +274,26 @@ export default class LevelScene extends Phaser.Scene {
       const vx = b.body.deltaX();
       const vy = b.body.deltaY();
 
-      // determine direction from bubble to grid
-      // then negate it to have opposite direction
+      // determine direction from bubble to grid, then negate it to have opposite direction
       const directionToGrid = new Phaser.Math.Vector2(gx - bx, gy - by)
         .normalize()
         .negate();
 
-      // get where the bubble would be at contact with grid
+      // get where the bubble would collided with the bubbles on the grid
       const x = gx + directionToGrid.x * gb.width;
       const y = gy + directionToGrid.y * gb.width;
-      console.log('positioning at x:', bx, x);
-      // handle if x or y is goes out of world bounds:
 
-      this.shooter?.returnBubble(b);
-
-      // this.descentController?.hold()
-
-      //await this.descentController?.reversing()
-
-      await this.grid?.attachBubble(x, y, color, gb, vx, vy);
-
-      await this.shooter?.attachNextBubble();
-      await this.shooter?.attachBubble();
+      this.shooter?.recycleBubble(b); // despawn the bubble that was launched
+      await this.grid?.attachBubble(x, y, color, gb, vx, vy); // determine which bubble will be loaded now
+      await this.shooter?.attachNextBubble(); // attach currently next bubble to the shooter
+      await this.shooter?.prepareNextBubble(); // determine which bubble will be loaded next
     }
   }
 
   private handleGameOver() {
     this.scene.pause(SceneKeys.GameUI);
-    this.sound.stopAll();
-    this.scene.run(SceneKeys.GameOver);
+    this.sfxController?.stopAllAudio();
+    this.scene.run(SceneKeys.GameOver, { score: this.gameUI._score });
   }
 
   private setupBackground() {

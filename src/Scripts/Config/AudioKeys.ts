@@ -1,11 +1,14 @@
 enum AudioKeys {
-  InGameBGM = 'inGameBGM',
-  BubbleShoot = 'BubbleShooter',
-  BubbleAttach = 'BubbleAttach',
-  BubblePop = 'BubblePop',
-  GameOver = 'GameOver',
-  Click = 'Click',
-  BubbleWhoop = 'BubbleWhoop'
+  InGameBGM = 'in-game-bgm',
+  BubbleShoot = 'bubble-shooter',
+  BubbleAttach = 'bubble-attach',
+  BubblePop = 'bubble-pop',
+  BubbleSpawn = 'bubble-spawn',
+  GameOver = 'game-over',
+  Click = 'click',
+  BubbleWhoop = 'bubble-whoop',
+  Descend = 'descend',
+  LevelUp = 'level-up'
 }
 
 export default AudioKeys;

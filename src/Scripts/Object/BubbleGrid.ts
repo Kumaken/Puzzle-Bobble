@@ -1,8 +1,7 @@
 import 'phaser';
 
 import BubbleLayoutData from './BubbleLayoutData';
-
-import { colorIsMatch } from '../Config/ColorConfig';
+import { colorMatches } from '../Config/ColorConfig';
 import { Subject, Observable } from 'rxjs';
 import { IBubble } from '../Interfaces/IBubble';
 import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
@@ -10,7 +9,7 @@ import ColorConfig from '../Config/ColorConfig';
 import TextureKeys from '../Config/TextureKeys';
 import Shooter from './Shooter';
 import AlignTool from '../Util/AlignTool';
-import { DEFAULT_HEIGHT, DEFAULT_WIDTH } from '../Util/Constant';
+import { DEFAULT_HEIGHT } from '../Util/Constant';
 
 interface IGridPosition {
   row: number;
@@ -19,50 +18,46 @@ interface IGridPosition {
 
 type IBubbleOrNone = IBubble | undefined;
 
-class RowList extends Array<IBubbleOrNone> {
+class RowArray extends Array<IBubbleOrNone> {
   isStaggered = false;
 }
 
 export default class BubbleGrid {
   private scene: Phaser.Scene;
   private pool: IStaticBubblePool;
-
-  private layoutData?: BubbleLayoutData;
-
-  private size: Phaser.Structs.Size;
-
-  private grid: IBubbleOrNone[][] = [];
+  private bubbleLayoutData?: BubbleLayoutData;
+  // Individual Bubble Properties
+  private bubbleSize: Phaser.Structs.Size;
   private bubblesCount = 0;
-
-  private bubblesDestroyedSubject = new Subject<number>();
-  private bubbleWillBeDestroyed = new Subject<IBubble>();
-  private orphanWillBeDestroyed = new Subject<IBubble>();
-  private bubblesAddedSubject = new Subject<number>();
-  private bubbleAttachedSubject = new Subject<IBubble>();
-
-  private midPoint: number;
+  // Bubble grid properties
+  private grid: IBubbleOrNone[][] = [];
   private bubblesPerRow: number;
+  private midPoint: number;
   public gridWidth: number;
   public gridHeight: number;
   public gridX: number;
   public effGridX: number;
-
   public gridRightX: number;
   public effGridRightX: number;
   public gridY: number;
   public effGridY: number;
-  public sideGap = 3;
-
-  public descentInterval: number;
-  public borderWidth = 22;
-
   private bubbleLeftmostX: number;
   private bubbleRightmostX: number;
+  public sideGap = 3;
+  // Descend Properties
+  public descentInterval: number;
+  // Border Frame Properties
+  public borderWidth = 22;
+  // Subscription
+  private bubblesDestroyedSubject = new Subject<number>();
+  private bubbleWillBeDestroyed = new Subject<IBubble>();
+  private danglingWillBeDestroyed = new Subject<IBubble>();
+  private bubbleAttachedSubject = new Subject<IBubble>();
 
   /**
    * Gets total active bubbles in the game
    */
-  get totalBubbles(): number {
+  get bubbleCount(): number {
     return this.bubblesCount;
   }
 
@@ -70,7 +65,7 @@ export default class BubbleGrid {
    * Gets the total height value of the grid
    */
   get height(): number {
-    this.cleanUpEmptyRows();
+    this.removeEmptyRows();
     return this.grid.length * this.bubbleInterval;
   }
 
@@ -78,22 +73,20 @@ export default class BubbleGrid {
    * Gets y value of height interval at every bubble row
    */
   get bubbleInterval(): number {
-    return this.size.height;
+    return this.bubbleSize.height;
   }
 
   /**
    * Gets the height where the last row is (most bottom)
    */
-  get bottom(): number {
+  get gridBottom(): number {
     if (this.grid.length <= 0) {
       return 0;
     }
-
     const bubble = this.grid[this.grid.length - 1].find((n) => n);
     if (!bubble) {
       return 0;
     }
-
     return bubble.y + bubble.radius;
   }
 
@@ -106,25 +99,37 @@ export default class BubbleGrid {
     this.pool = pool;
     this.bubblesPerRow = bubblesPerRow;
     const sample = this.pool.spawn(0, 0, null);
-    this.size = new Phaser.Structs.Size(sample.width, sample.height);
+    this.bubbleSize = new Phaser.Structs.Size(sample.width, sample.height);
     this.pool.despawn(sample);
 
-    this.midPoint = this.scene.scale.width * 0.5 + this.size.width * 0.2;
+    this.midPoint = this.scene.scale.width * 0.5 + this.bubbleSize.width * 0.2;
     console.log(
       'midpoint',
       this.midPoint,
       'vs.',
-      AlignTool.getCenterHorizontal(this.scene) + this.size.width * 0.2
+      AlignTool.getCenterHorizontal(this.scene) + this.bubbleSize.width * 0.2
     );
     this.gridHeight = DEFAULT_HEIGHT;
-
-    // Calculate how wide is the bubble grid:
-    this.gridWidth = this.size.width * bubblesPerRow + this.size.width * 0.5;
+    this.gridWidth =
+      this.bubbleSize.width * bubblesPerRow + this.bubbleSize.width * 0.5;
     this.gridX =
       this.midPoint -
-      this.bubblesPerRow * 0.5 * this.size.width -
-      this.size.width * 0.5;
+      this.bubblesPerRow * 0.5 * this.bubbleSize.width -
+      this.bubbleSize.width * 0.5;
     this.gridY = 0;
+    this.gridRightX = this.gridX + this.gridWidth;
+    const topBorderIMG = scene.textures
+      .get(TextureKeys.TopBorder)
+      .getSourceImage();
+    this.effGridY = topBorderIMG.height * 3;
+    this.effGridX = this.gridX + this.borderWidth / 2 + this.sideGap;
+    this.effGridRightX = this.gridRightX - this.borderWidth / 2 - this.sideGap;
+    this.descentInterval =
+      scene.textures.get(TextureKeys.DropLoop).getSourceImage().height * 3;
+
+    this.bubbleLeftmostX = this.effGridX + this.bubbleSize.width / 2;
+    this.bubbleRightmostX = this.effGridRightX - this.bubbleSize.width / 2;
+
     // spawn border:
     scene.add.tileSprite(
       this.gridX,
@@ -133,8 +138,7 @@ export default class BubbleGrid {
       this.gridHeight,
       TextureKeys.LeftBorder
     );
-    this.gridRightX = this.gridX + this.gridWidth;
-    // this.gridRightX = this.gridX + this.gridWidth;
+
     scene.add.tileSprite(
       this.gridRightX,
       AlignTool.getCenterVertical(this.scene), // center point
@@ -142,9 +146,7 @@ export default class BubbleGrid {
       this.gridHeight,
       TextureKeys.RightBorder
     );
-    const topBorderIMG = scene.textures
-      .get(TextureKeys.TopBorder)
-      .getSourceImage();
+
     const topBorder = scene.add.tileSprite(
       (this.gridX + this.gridRightX) / 2,
       this.gridY + topBorderIMG.height * 1.5,
@@ -154,15 +156,7 @@ export default class BubbleGrid {
     );
     topBorder.setDepth(1);
 
-    this.effGridY = topBorderIMG.height * 3;
-    this.effGridX = this.gridX + this.borderWidth / 2 + this.sideGap;
-    this.effGridRightX = this.gridRightX - this.borderWidth / 2 - this.sideGap;
-    this.descentInterval =
-      scene.textures.get(TextureKeys.DropLoop).getSourceImage().height * 3;
-
-    this.bubbleLeftmostX = this.effGridX + this.size.width / 2;
-    this.bubbleRightmostX = this.effGridRightX - this.size.width / 2;
-    console.log('bubblesize', this.size);
+    console.log('bubblesize', this.bubbleSize);
     console.log('bubble', this.bubbleLeftmostX, this.bubbleRightmostX);
     console.log('effboundary', this.effGridX, this.effGridRightX);
     console.log('boundary', this.gridX, this.gridRightX);
@@ -173,9 +167,8 @@ export default class BubbleGrid {
     this.bubbleWillBeDestroyed.complete();
   }
 
-  setLayoutData(layout: BubbleLayoutData): this {
-    this.layoutData = layout;
-
+  setBubbleLayoutData(layout: BubbleLayoutData): this {
+    this.bubbleLayoutData = layout;
     return this;
   }
 
@@ -187,16 +180,21 @@ export default class BubbleGrid {
     return this.bubbleWillBeDestroyed.asObservable();
   }
 
-  onOrphanWillBeDestroyed(): Observable<IBubble> {
-    return this.orphanWillBeDestroyed.asObservable();
-  }
-
-  onBubblesAdded(): Observable<number> {
-    return this.bubblesAddedSubject.asObservable();
+  onDanglingWillBeDestroyed(): Observable<IBubble> {
+    return this.danglingWillBeDestroyed.asObservable();
   }
 
   onBubbleAttached(): Observable<IBubble> {
     return this.bubbleAttachedSubject.asObservable();
+  }
+
+  setIsShootingFalse(): void {
+    Shooter.isShooting = false;
+    console.log('isShooting is changed to false');
+  }
+
+  async updateIsShootingTimer(ms: number): Promise<unknown> {
+    return new Promise(() => setTimeout(this.setIsShootingFalse, ms));
   }
 
   /**
@@ -217,8 +215,7 @@ export default class BubbleGrid {
     bvx: number,
     bvy: number
   ) {
-    const width = this.size.width;
-    const radius = width * 0.5;
+    const radius = this.bubbleSize.width * 0.5;
 
     const vel = new Phaser.Math.Vector2(bvx, bvy);
     vel.normalize();
@@ -288,32 +285,12 @@ export default class BubbleGrid {
     // console.lo('initialres:', bRow, bCol);
 
     // handle if destinated position already contains a bubble:
-    if (this.getAt(bRow, bCol)) {
+    if (this.getBubbleAt(bRow, bCol)) {
       console.log(
         "bubble already existed at the position we're inserting in!",
         bRow,
         bCol
       );
-      // if (!sameRow) {
-      //   if (hx < cellX) {
-      //     if (isStaggered) {
-      //       if (bCol !== 1) {
-      //         tx -= this.size.width;
-      //         bCol -= 1;
-      //       }
-      //     } else {
-      //       if (bCol !== 0) {
-      //         tx -= this.size.width;
-      //         bCol -= 1;
-      //       }
-      //     }
-      //   } else {
-      //     if (bCol < this.bubblesPerRow - 1) {
-      //       tx += this.size.width;
-      //       bCol += 1;
-      //     }
-      //   }
-      // } else {
       // if previously same row -> go to next row:
       if (ty < cellY) {
         ty -= this.bubbleInterval;
@@ -323,49 +300,47 @@ export default class BubbleGrid {
         bRow = row + 1;
       }
     }
-    // if (tx > this.scale.width) tx = this.scale.width;
+
+    // Handle if tx or ty are out of grid boundaries
     if (tx < this.bubbleLeftmostX) {
       if (this.isRowStaggered(bRow))
-        tx = this.bubbleLeftmostX + this.size.width * 0.5;
+        tx = this.bubbleLeftmostX + this.bubbleSize.width * 0.5;
       else tx = this.bubbleLeftmostX;
     }
 
     if (tx > this.bubbleRightmostX) {
       if (this.isRowStaggered(bRow))
-        tx = this.bubbleRightmostX - this.size.width * 0.5;
+        tx = this.bubbleRightmostX - this.bubbleSize.width * 0.5;
       else tx = this.bubbleRightmostX;
     }
-    // if (ty > this.scale.height) ty = this.scale.height;
     console.log('after', x, y, tx, ty);
     const newBubble = this.pool.spawn(x, y, color);
-    this.insertAt(bRow, bCol, newBubble);
+    this.attachBubbleAt(bRow, bCol, newBubble);
 
     const matches = this.findMatchesAt(bRow, bCol, color as number);
-    // minimum 3 matches required
+
+    this.updateIsShootingTimer(500); // hold next shooting for the animations to finish first
+    // bubbles pop with minimum matches of 3
     if (matches.length < 3) {
       this.bubblesCount += 1;
-      this.bubblesAddedSubject.next(1);
-      this.bubbleAttachedSubject.next(newBubble);
-      await this.animateAttachBounceAt(bRow, bCol, tx, ty, newBubble);
+      await this.animateBubbleAttach(bRow, bCol, tx, ty, newBubble);
       console.table(this.grid);
       return;
     }
-
-    // remove them from grid immediately but not visually...
-    // remove visually after animation below
-    // we want to remove from grid immediately so that other
-    // processes that add new rows can run normally
+    // remove matched bubbles from grid but not visually yet
     const matchedBubbles = this.removeFromGrid(matches);
+    // find
+    const danglingPositions = this.findDangledBubbles();
+    const danglingBubbles = this.removeFromGrid(danglingPositions).map(
+      (bubble) => {
+        bubble.setActive(false);
+        this.scene.physics.world.remove(bubble.body);
+        return bubble;
+      }
+    );
 
-    const orphanPositions = this.findOrphanedBubbles();
-    const orphans = this.removeFromGrid(orphanPositions).map((bubble) => {
-      bubble.setActive(false);
-      this.scene.physics.world.remove(bubble.body);
-      return bubble;
-    });
-
-    this.cleanUpEmptyRows();
-
+    this.removeEmptyRows();
+    // Spawn new bubble animation:
     await new Promise((resolve) => {
       this.scene.tweens.add({
         targets: newBubble,
@@ -382,41 +357,40 @@ export default class BubbleGrid {
     const body = newBubble.body as Phaser.Physics.Arcade.StaticBody;
     body.updateFromGameObject();
 
-    // remove matched bubbles
+    // Remove matched bubbles
     matchedBubbles.forEach((bubble) => {
       this.bubbleWillBeDestroyed.next(bubble);
       this.pool.despawn(bubble);
     });
 
-    const destroyedCount = matches.length + orphans.length;
+    const destroyedCount = matches.length + danglingBubbles.length;
     this.bubblesDestroyedSubject.next(destroyedCount);
     this.bubblesCount -= destroyedCount;
 
-    if (orphans.length > 0) {
-      await this.animateOrphans(orphans);
+    // Animate falling dangling bubbles
+    if (danglingBubbles.length > 0) {
+      await this.animateBubbleFall(danglingBubbles);
     }
 
     console.table(this.grid);
-    console.log('DONE ATTACH BUBBLE -------------');
-    Shooter.isShooting = false;
   }
 
   /**
    * Initial generation of bubbles
-   * @param rows how many rows to generate initially to hold the bubbles
+   * @param rows how many rows to generate initially to hold the bubbles. (INCLUDING PLACEHOLDER BUBBLE ROW)
    */
-  generate(rows = 6): this {
-    if (!this.layoutData) {
+  generateInitialBubbles(rows = 6): this {
+    if (!this.bubbleLayoutData) {
       return this;
     }
     for (let i = 0; i < rows; ++i) {
-      this.spawnRow();
+      this.generateBubbleRow();
     }
 
     return this;
   }
 
-  moveBy(dy: number): this {
+  descendBy(dy: number): this {
     if (this.pool.countActive() === 0) {
       return this;
     }
@@ -435,13 +409,13 @@ export default class BubbleGrid {
   }
 
   /**
-   * Spawns bubble on one row. Contains algorithm on whether to place bubble on another row or this row.
-   * It spawns a row of bubble to the top
+   * Generates bubble on one row. Contains algorithm on whether to place bubble on another row or this row.
+   * It generates a row of bubble to the top
    * Returns row number
    */
-  spawnRow(): number {
-    // if layout data is unavailable, terminate:
-    if (!this.layoutData) {
+  generateBubbleRow(): number {
+    // if bubble layout data is unavailable, terminate:
+    if (!this.bubbleLayoutData) {
       return -1;
     }
 
@@ -450,48 +424,26 @@ export default class BubbleGrid {
       if (this.grid.length == 0) currRowIsStaggered = false;
       else currRowIsStaggered = true;
     } else currRowIsStaggered = !this.isRowStaggered(2);
-    const row = this.layoutData.getNextRow(currRowIsStaggered);
+    const row = this.bubbleLayoutData.generateNextRow(currRowIsStaggered);
     const count = row.length;
 
     if (count <= 0) {
       return 0;
     }
 
-    this.addRowToFront(row, currRowIsStaggered);
-
+    this.spawnBubbleRowTopmost(row, currRowIsStaggered);
     this.bubblesCount += count;
-    this.bubblesAddedSubject.next(count);
-
     return row.length;
   }
 
-  spawnRowUpperBound(): number {
-    // if layout data is unavailable, terminate:
-    if (!this.layoutData) {
-      return -1;
-    }
-
-    const currRowIsStaggered = false;
-    const row = this.layoutData.getNextRow(currRowIsStaggered);
-    const count = row.length;
-
-    if (count <= 0) {
-      return 0;
-    }
-
-    this.addRowToFront(row, currRowIsStaggered);
-
-    return row.length;
-  }
-
-  private addRowToFront(row: ColorConfig[], isStaggered: boolean) {
-    const width = this.size.width;
+  private spawnBubbleRowTopmost(row: ColorConfig[], isStaggered: boolean) {
+    const width = this.bubbleSize.width;
     const radius = width * 0.5;
     const verticalInterval = this.bubbleInterval;
 
     const count = row.length;
 
-    const gridRow = new RowList();
+    const gridRow = new RowArray();
     this.grid.unshift(gridRow);
 
     const halfCount = count * 0.5;
@@ -500,7 +452,7 @@ export default class BubbleGrid {
 
     gridRow.isStaggered = isStaggered;
     if (this.grid.length > 1) {
-      const rowList = this.grid[1] as RowList;
+      const rowList = this.grid[1] as RowArray;
       const anyItem = rowList.find((n) => n);
       if (anyItem) {
         y = anyItem.y - verticalInterval;
@@ -519,15 +471,9 @@ export default class BubbleGrid {
         gridRow.push(b);
         x += width;
       } else {
-        // console.lo(colorCode);
+        // skip
       }
     });
-
-    // if (gridRow.isStaggered) {
-    //   // pad end with space for offset
-    //   // gridRow.pop();
-    //   gridRow.push(undefined);
-    // }
   }
 
   private removeFromGrid(matches: IGridPosition[]) {
@@ -535,11 +481,10 @@ export default class BubbleGrid {
     const size = matches.length;
     for (let i = 0; i < size; ++i) {
       const { row, col } = matches[i];
-      const bubble = this.getAt(row, col);
+      const bubble = this.getBubbleAt(row, col);
 
       if (!bubble) {
-        // should never be the case..
-        console.warn(`detroyMatches: match not found...`);
+        console.warn(`match is not found anywhere.`);
         continue;
       }
 
@@ -550,27 +495,26 @@ export default class BubbleGrid {
     return bubbles;
   }
 
-  private async animateOrphans(orphans: IBubble[]) {
-    // move down and fade out
+  private async animateBubbleFall(danglings: IBubble[]) {
+    // fall down and fade-out
     const timeline = this.scene.tweens.timeline();
     const bottom = this.scene.scale.height * 0.9;
 
-    const tasks = orphans.map((orphan) => {
-      const y = orphan.y;
+    const tasks = danglings.map((dangling) => {
+      const y = dangling.y;
       const dy = bottom - y;
       const duration = dy * 0.75;
 
       return new Promise((resolve) => {
         timeline.add({
-          targets: orphan,
+          targets: dangling,
           y: y + dy,
           offset: 0,
           duration,
           onComplete: function () {
-            this.bubbleWillBeDestroyed.next(orphan);
-            this.orphanWillBeDestroyed.next(orphan);
-            this.pool.despawn(orphan);
-
+            this.bubbleWillBeDestroyed.next(dangling);
+            this.danglingWillBeDestroyed.next(dangling);
+            this.pool.despawn(dangling);
             resolve();
           },
           onCompleteScope: this
@@ -579,19 +523,16 @@ export default class BubbleGrid {
     });
 
     timeline.play();
-
     await Promise.all(tasks);
   }
 
-  private async animateAttachBounceAt(
+  private async animateBubbleAttach(
     row: number,
     col: number,
     tx: number,
     ty: number,
     newBubble: IBubble
   ) {
-    // https://github.com/photonstorm/phaser/blob/v3.22.0/src/math/easing/EaseMap.js
-
     // this timeline runs animation sequence sequentially
     const timeline = this.scene.tweens.createTimeline();
     timeline.add({
@@ -599,14 +540,12 @@ export default class BubbleGrid {
       y: ty - 5,
       duration: 50
     });
-
     timeline.add({
       targets: newBubble,
       x: tx,
       duration: 100,
       offset: 0
     });
-
     timeline.add({
       targets: newBubble,
       y: ty,
@@ -615,14 +554,12 @@ export default class BubbleGrid {
       onComplete: () => {
         const body = newBubble.body as Phaser.Physics.Arcade.StaticBody;
         body.updateFromGameObject();
-        Shooter.isShooting = false;
         console.log('finished animation');
       }
     });
 
     await timeline.play();
-
-    await this.jiggleNeighbors(row, col);
+    await this.jiggleAdjacentBubbles(row, col);
     console.log('finished animate attach');
   }
 
@@ -637,58 +574,53 @@ export default class BubbleGrid {
       const row = this.grid[i];
       const colIdx = row.findIndex((b) => b === bubble);
       if (colIdx < 0) {
-        // not found in this row
+        // bubble is not found on this row
         continue;
       }
-
       return {
         row: i,
         col: colIdx
       };
     }
-
+    // NOT FOUND ANYWHERE!
     return {
       row: -1,
       col: -1
     };
   }
 
-  private insertAt(row: number, col: number, bubble: IBubble) {
+  private attachBubbleAt(row: number, col: number, bubble: IBubble) {
     if (row >= this.grid.length) {
       const count = row - (this.grid.length - 1);
       for (let i = 0; i < count; ++i) {
-        const rowList = new RowList();
-        const prevRow = this.grid[row + i - 1] as RowList;
+        const rowList = new RowArray();
+        const prevRow = this.grid[row + i - 1] as RowArray;
         rowList.isStaggered = !prevRow.isStaggered;
         this.grid.push(rowList);
       }
     }
-
     const rowList = this.grid[row];
     for (let i = 0; i <= col; ++i) {
       if (rowList.length <= i) {
         rowList[i] = undefined;
       }
     }
-
     rowList[col] = bubble;
     console.log('inserting:', rowList, 'at', row, col);
   }
 
-  private getAt(row: number, col: number) {
+  private getBubbleAt(row: number, col: number) {
     if (row < 0) {
       return null;
     }
-
     if (row > this.grid.length - 1) {
       return null;
     }
-
     const rowList = this.grid[row];
     return rowList[col];
   }
 
-  private findOrphanedBubbles() {
+  private findDangledBubbles() {
     // find all connected bubbles starting from the top row
     const connected = new Set<IBubble>();
     const rootPositions = this.grid[0]
@@ -705,9 +637,9 @@ export default class BubbleGrid {
       this.findMatchesAt(row, col, ColorConfig.Any as number, connected);
     });
 
-    // any bubbles that are NOT in the connected set are orphaned
-    // ignore the root row at index 0; they can never be "orphaned"
-    const orphans: IGridPosition[] = [];
+    // bubbles which are not in the connected set are dagling
+    // ignore the first row as it is impossible for the bubbles there to be dangling
+    const danglings: IGridPosition[] = [];
     const count = this.grid.length;
     for (let row = 1; row < count; ++row) {
       const list = this.grid[row];
@@ -716,19 +648,16 @@ export default class BubbleGrid {
         if (!bubble) {
           continue;
         }
-
         if (connected.has(bubble)) {
           continue;
         }
-
-        orphans.push({
+        danglings.push({
           row,
           col
         });
       }
     }
-
-    return orphans;
+    return danglings;
   }
 
   private findMatchesAt(
@@ -737,7 +666,7 @@ export default class BubbleGrid {
     color: number,
     found: Set<IBubble> = new Set()
   ) {
-    // breadth-first search method
+    // BFS
     const isStaggered = this.isRowStaggered(row);
     const adjacentMatches: IGridPosition[] = [];
 
@@ -745,8 +674,8 @@ export default class BubbleGrid {
     if (row - 1 !== 0) {
       // top left
       if (isStaggered) {
-        const tl = this.getAt(row - 1, col - 1);
-        if (tl && colorIsMatch(tl.color, color) && !found.has(tl)) {
+        const tl = this.getBubbleAt(row - 1, col - 1);
+        if (tl && colorMatches(tl.color, color) && !found.has(tl)) {
           adjacentMatches.push({
             row: row - 1,
             col: col - 1
@@ -756,8 +685,8 @@ export default class BubbleGrid {
       }
 
       // top
-      const t = this.getAt(row - 1, col);
-      if (t && colorIsMatch(t.color, color) && !found.has(t)) {
+      const t = this.getBubbleAt(row - 1, col);
+      if (t && colorMatches(t.color, color) && !found.has(t)) {
         adjacentMatches.push({
           row: row - 1,
           col
@@ -767,8 +696,8 @@ export default class BubbleGrid {
 
       // top right
       if (!isStaggered) {
-        const tr = this.getAt(row - 1, col + 1);
-        if (tr && colorIsMatch(tr.color, color) && !found.has(tr)) {
+        const tr = this.getBubbleAt(row - 1, col + 1);
+        if (tr && colorMatches(tr.color, color) && !found.has(tr)) {
           adjacentMatches.push({
             row: row - 1,
             col: col + 1
@@ -778,8 +707,8 @@ export default class BubbleGrid {
       }
     }
     // right
-    const r = this.getAt(row, col + 1);
-    if (r && colorIsMatch(r.color, color) && !found.has(r)) {
+    const r = this.getBubbleAt(row, col + 1);
+    if (r && colorMatches(r.color, color) && !found.has(r)) {
       adjacentMatches.push({
         row,
         col: col + 1
@@ -789,8 +718,8 @@ export default class BubbleGrid {
 
     // bottom right
     if (!isStaggered) {
-      const br = this.getAt(row + 1, col + 1);
-      if (br && colorIsMatch(br.color, color) && !found.has(br)) {
+      const br = this.getBubbleAt(row + 1, col + 1);
+      if (br && colorMatches(br.color, color) && !found.has(br)) {
         adjacentMatches.push({
           row: row + 1,
           col: col + 1
@@ -800,8 +729,8 @@ export default class BubbleGrid {
     }
 
     // bottom
-    const b = this.getAt(row + 1, col);
-    if (b && colorIsMatch(b.color, color) && !found.has(b)) {
+    const b = this.getBubbleAt(row + 1, col);
+    if (b && colorMatches(b.color, color) && !found.has(b)) {
       adjacentMatches.push({
         row: row + 1,
         col
@@ -811,8 +740,8 @@ export default class BubbleGrid {
 
     // bottom left
     if (isStaggered) {
-      const bl = this.getAt(row + 1, col - 1);
-      if (bl && colorIsMatch(bl.color, color) && !found.has(bl)) {
+      const bl = this.getBubbleAt(row + 1, col - 1);
+      if (bl && colorMatches(bl.color, color) && !found.has(bl)) {
         adjacentMatches.push({
           row: row + 1,
           col: col - 1
@@ -822,8 +751,8 @@ export default class BubbleGrid {
     }
 
     // left
-    const l = this.getAt(row, col - 1);
-    if (l && colorIsMatch(l.color, color) && !found.has(l)) {
+    const l = this.getBubbleAt(row, col - 1);
+    if (l && colorMatches(l.color, color) && !found.has(l)) {
       adjacentMatches.push({
         row,
         col: col - 1
@@ -838,7 +767,7 @@ export default class BubbleGrid {
     });
 
     const missing = adjacentMatches.find(({ row, col }) => {
-      return !this.getAt(row, col);
+      return !this.getBubbleAt(row, col);
     });
 
     if (missing) {
@@ -848,14 +777,14 @@ export default class BubbleGrid {
     return adjacentMatches;
   }
 
-  private async jiggleNeighbors(sourceRow: number, sourceCol: number) {
-    const sourceBubble = this.getAt(sourceRow, sourceCol);
-    const firstNeightbors = this.getNeighbors(sourceRow, sourceCol);
+  private async jiggleAdjacentBubbles(sourceRow: number, sourceCol: number) {
+    const sourceBubble = this.getBubbleAt(sourceRow, sourceCol);
+    const firstNeightbors = this.getAdjacentBubbles(sourceRow, sourceCol);
 
     const secondTop = sourceRow - 1;
 
     const secondNeighbors = firstNeightbors.find(({ row }) => row === secondTop)
-      ? this.getNeighbors(secondTop, sourceCol)
+      ? this.getAdjacentBubbles(secondTop, sourceCol)
       : [];
 
     const degrees = [firstNeightbors, secondNeighbors];
@@ -865,7 +794,7 @@ export default class BubbleGrid {
       const deg = degrees[i];
       for (let j = 0; j < deg.length; ++j) {
         const { row, col } = deg[j];
-        const bubble = this.getAt(row, col);
+        const bubble = this.getBubbleAt(row, col);
         if (!bubble || bubble === sourceBubble) {
           continue;
         }
@@ -898,11 +827,16 @@ export default class BubbleGrid {
     }
   }
 
-  private getNeighbors(row: number, col: number, includeBottom = false) {
-    const positions = this.getNeighborPositions(row, col, 1, includeBottom);
+  private getAdjacentBubbles(row: number, col: number, includeBottom = false) {
+    const positions = this.getAdjacentBubblePositions(
+      row,
+      col,
+      1,
+      includeBottom
+    );
     const neighbors = positions
       .map(({ row, col }) => {
-        const n = this.getAt(row, col);
+        const n = this.getBubbleAt(row, col);
         if (!n) {
           return undefined;
         }
@@ -913,7 +847,7 @@ export default class BubbleGrid {
     return neighbors as { row: number; col: number }[];
   }
 
-  private getNeighborPositions(
+  private getAdjacentBubblePositions(
     row: number,
     col: number,
     degrees = 1,
@@ -938,43 +872,44 @@ export default class BubbleGrid {
 
   private isRowStaggered(row: number) {
     if (row >= this.grid.length - 1) {
-      // if asking about a row that has not been created yet
-      // check row above and invert
-      const rowList = this.grid[row - 1] as RowList;
+      // undefined row
+      // invert the row above
+      const rowList = this.grid[row - 1] as RowArray;
       return !rowList.isStaggered;
     }
 
-    const rowList = this.grid[row] as RowList;
+    const rowList = this.grid[row] as RowArray;
     return rowList.isStaggered;
   }
 
-  private cleanUpEmptyRows() {
+  private removeEmptyRows() {
+    // remove empty rows from grid
     const size = this.grid.length;
     for (let i = size - 1; i >= 0; --i) {
       const row = this.grid[i];
       if (row.find((n) => n)) {
         return;
       }
-
       this.grid.pop();
     }
   }
 
-  public spawnNextWave() {
-    this.moveBy(this.bubbleInterval);
-    this.spawnRow();
+  public spawnNextWave(): void {
+    this.descendBy(this.bubbleInterval);
+    this.generateBubbleRow();
   }
 
   public descend(): void {
-    this.moveBy(this.descentInterval);
+    this.descendBy(this.descentInterval);
 
-    this.scene.add.tileSprite(
+    const dropLoop = this.scene.add.tileSprite(
       (this.gridX + this.gridRightX) / 2,
       this.effGridY + this.descentInterval * 0.5,
       this.gridWidth,
       this.descentInterval,
       TextureKeys.DropLoop
     );
+    dropLoop.setDepth(1);
     this.effGridY += this.descentInterval;
   }
 }

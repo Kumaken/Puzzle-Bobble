@@ -9,11 +9,11 @@ interface IShooter extends Phaser.GameObjects.Container {
   onShoot(): Observable<IBubble>;
 
   setBubblePool(pool: IBubblePool);
-  setGuide(guide: IShotGuide);
+  setShooterGuide(guide: IShotGuide);
 
-  attachBubble(bubble?: IBubble);
+  prepareNextBubble(bubble?: IBubble);
   attachNextBubble();
-  returnBubble(bubble: IBubble);
+  recycleBubble(bubble: IBubble);
   update(dt: number);
 }
 

@@ -1,12 +1,10 @@
 import 'phaser';
 
-import { Subject } from 'rxjs';
-import TextureKeys from '../Config/TextureKeys';
+import { Subject, Observable } from 'rxjs';
 import { IShooter } from '../Interfaces/IShooter';
 import { IBubble } from '../Interfaces/IBubble';
 import { IBubblePool } from '../Interfaces/IBubblePool';
 import { IShotGuide } from '../Interfaces/IShotGuide';
-import ColorConfig from '../Config/ColorConfig';
 
 const DPR = window.devicePixelRatio;
 const RADIUS = 0 * DPR;
@@ -39,13 +37,6 @@ export default class Shooter extends Phaser.GameObjects.Container
     this.add(base);
     Shooter.isShooting = false;
 
-    console.log('shooter constructed!', this._height);
-
-    scene.input.addListener(
-      Phaser.Input.Events.POINTER_DOWN,
-      this.handlePointerDown,
-      this
-    );
     scene.input.addListener(
       Phaser.Input.Events.POINTER_UP,
       this.handlePointerUp,
@@ -53,13 +44,7 @@ export default class Shooter extends Phaser.GameObjects.Container
     );
   }
 
-  preDestroy() {
-    // console.log('preDestroy called');
-    this.scene.input.removeListener(
-      Phaser.Input.Events.POINTER_DOWN,
-      this.handlePointerDown,
-      this
-    );
+  preDestroy(): void {
     this.scene.input.removeListener(
       Phaser.Input.Events.POINTER_UP,
       this.handlePointerUp,
@@ -69,19 +54,19 @@ export default class Shooter extends Phaser.GameObjects.Container
     super.preDestroy();
   }
 
-  onShoot() {
+  onShoot(): Observable<IBubble> {
     return this.shootSubject.asObservable();
   }
 
-  setBubblePool(pool: IBubblePool) {
+  setBubblePool(pool: IBubblePool): void {
     this.bubblePool = pool;
   }
 
-  setGuide(guide: IShotGuide) {
+  setShooterGuide(guide: IShotGuide): void {
     this.shotGuide = guide;
   }
 
-  attachBubble(bubble?: IBubble) {
+  prepareNextBubble(bubble?: IBubble): void {
     if (!this.bubblePool) {
       return;
     }
@@ -104,7 +89,7 @@ export default class Shooter extends Phaser.GameObjects.Container
     });
   }
 
-  attachNextBubble() {
+  attachNextBubble(): void {
     if (!this.nextBubble) return;
     this.bubble = this.nextBubble;
     this.bubble.disableBody();
@@ -127,21 +112,17 @@ export default class Shooter extends Phaser.GameObjects.Container
     });
   }
 
-  returnBubble(bubble: IBubble) {
+  recycleBubble(bubble: IBubble): void {
     this.bubblePool?.despawn(bubble);
   }
 
-  update(dt: number) {
+  update(): void {
     // blocks shooter when isShooting is true
     if (!this.bubble) {
       return;
     }
 
     const pointer = this.scene.input.activePointer;
-
-    if (!pointer.leftButtonDown()) {
-      return;
-    }
 
     const dx = pointer.x - this.x;
     const dy = pointer.y - this.y;
@@ -167,32 +148,24 @@ export default class Shooter extends Phaser.GameObjects.Container
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private handlePointerDown() {}
-
   private handlePointerUp() {
-    Shooter.isShooting = true;
-    if (!this.bubble) {
+    if (!this.bubble || Shooter.isShooting) {
       return;
     }
-
+    Shooter.isShooting = true;
     const pointer = this.scene.input.activePointer;
     const dx = pointer.x - this.x;
     const dy = pointer.y - this.y;
-
     const vec = new Phaser.Math.Vector2(dx, dy);
     vec.normalize();
-
-    this.bubble.launch(vec);
-
+    this.bubble.launchBubble(vec);
     this.shootSubject.next(this.bubble);
-
     this.bubble = undefined;
-
     this.shotGuide?.hide();
   }
 }
 
+// Register to gameobject factory (Module Augmentation)
 Phaser.GameObjects.GameObjectFactory.register('shooter', function (
   x: number,
   y: number,

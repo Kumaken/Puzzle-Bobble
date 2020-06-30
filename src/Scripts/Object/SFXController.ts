@@ -1,25 +1,51 @@
 import * as Phaser from 'phaser';
 import { Observable, SubscriptionLike } from 'rxjs';
 import AudioKeys from '../Config/AudioKeys';
-
 import * as lodash from 'lodash';
 import { IBubble } from '../Interfaces/IBubble';
 
 export default class SFXController {
   private sound: Phaser.Sound.BaseSoundManager;
-
   private subscriptions: SubscriptionLike[] = [];
-
   constructor(sound: Phaser.Sound.BaseSoundManager) {
     this.sound = sound;
   }
 
-  destroy() {
+  destroy(): void {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.length = 0;
   }
 
-  handleShootBubble(onShoot: Observable<IBubble>) {
+  stopAllAudio(): void {
+    this.sound.stopAll();
+  }
+
+  playBGMMusic(): void {
+    this.sound.play(AudioKeys.InGameBGM, {
+      loop: true,
+      volume: 0.25
+    });
+  }
+
+  playDescendSFX(): void {
+    this.sound.play(AudioKeys.Descend, {
+      volume: 1
+    });
+  }
+
+  playSpawnBubbleSFX(): void {
+    this.sound.play(AudioKeys.BubbleSpawn, {
+      volume: 1
+    });
+  }
+
+  playLevelUpSFX(): void {
+    this.sound.play(AudioKeys.LevelUp, {
+      volume: 1
+    });
+  }
+
+  handleShootBubble(onShoot: Observable<IBubble>): void {
     const sub = onShoot.subscribe(() => {
       this.sound.play(AudioKeys.BubbleShoot, {
         volume: 0.3
@@ -29,7 +55,7 @@ export default class SFXController {
     this.subscriptions.push(sub);
   }
 
-  handleBubbleAttached(attached: Observable<IBubble>) {
+  handleBubbleAttached(attached: Observable<IBubble>): void {
     const sub = attached.subscribe(() => {
       this.sound.play(AudioKeys.BubbleAttach, {
         volume: 0.2
@@ -39,7 +65,7 @@ export default class SFXController {
     this.subscriptions.push(sub);
   }
 
-  handleClearMatches(clearMatches: Observable<number>) {
+  handleClearMatches(clearMatches: Observable<number>): void {
     const sub = clearMatches.subscribe((count) => {
       this.sound.play(AudioKeys.BubblePop, {
         volume: count > 3 ? 0.4 : 0.7
@@ -55,8 +81,8 @@ export default class SFXController {
     this.subscriptions.push(sub);
   }
 
-  handleClearOrphan(clearOrphan: Observable<IBubble>) {
-    const sub = clearOrphan.subscribe(
+  handleClearDangling(clearDangling: Observable<IBubble>): void {
+    const sub = clearDangling.subscribe(
       lodash.debounce(() => {
         this.sound.play(AudioKeys.BubbleWhoop, {
           volume: 0.2
@@ -67,7 +93,7 @@ export default class SFXController {
     this.subscriptions.push(sub);
   }
 
-  handleGameOverEnter(gameOverEnter: Observable<void>) {
+  handleGameOverEnter(gameOverEnter: Observable<void>): void {
     const sub = gameOverEnter.subscribe(() => {
       this.sound.play(AudioKeys.GameOver);
     });
@@ -75,7 +101,7 @@ export default class SFXController {
     this.subscriptions.push(sub);
   }
 
-  handleUIClick(uiClick: Observable<void>) {
+  handleUIClick(uiClick: Observable<void>): void {
     const sub = uiClick.subscribe(() => {
       this.sound.play(AudioKeys.Click, {
         volume: 0.5

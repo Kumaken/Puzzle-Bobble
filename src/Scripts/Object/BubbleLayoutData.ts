@@ -20,23 +20,20 @@ export default class BubbleLayoutData {
     this.bubblesPerRow = bubblesPerRow;
   }
 
-  getNextRow(isRowStaggered: boolean): ColorConfig[] {
+  generateNextRow(isRowStaggered: boolean): ColorConfig[] {
     let bubblePerRow = this.bubblesPerRow;
     if (isRowStaggered) bubblePerRow -= 1;
-    const count = this.bubbleSpawnModel.getNext(bubblePerRow);
-
-    // TODO: potentially randomize positions when less than 6 available
 
     const ret: ColorConfig[] = [];
-    for (let i = 0; i < count; ++i) {
-      ret.push(this.getRandomColor());
+    for (let i = 0; i < bubblePerRow; ++i) {
+      ret.push(this.randomizeColor());
     }
 
     if (isRowStaggered) ret.push(undefined);
     return ret;
   }
 
-  private getRandomColor() {
+  private randomizeColor() {
     const size = ALL_COLORS.length;
     const r = Math.floor(Math.random() * size);
     return ALL_COLORS[r];

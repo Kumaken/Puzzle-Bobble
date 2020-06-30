@@ -8,11 +8,11 @@ interface IBubble extends Phaser.Physics.Arcade.Sprite {
   readonly physicsRadius: number;
   readonly _texture: TextureKeys;
 
-  setRandomColor(): IBubble;
-  setColor(color: number): IBubble;
-  useCircleCollider(): IBubble;
-  launch(direction: Phaser.Math.Vector2): void;
-  stop(): void;
+  randomizeColor(): IBubble;
+  applyColor(color: number): IBubble;
+  giveCircleCollider(): IBubble;
+  launchBubble(direction: Phaser.Math.Vector2): void;
+  stopBubble(): void;
 }
 
 export { IBubble };

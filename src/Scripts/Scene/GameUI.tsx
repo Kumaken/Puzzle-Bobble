@@ -1,38 +1,59 @@
-import 'phaser';
+import * as Phaser from 'phaser';
 
 import ColorConfig from '../Config/ColorConfig';
 import { SubscriptionLike } from 'rxjs';
 import { IGameUI } from '../Interfaces/IGameUI';
 import TimerUtil, { DISPLAY_MODE } from '../Util/TimerUtil';
 import SceneKeys from '../Config/SceneKeys';
+import AlignTool from '../Util/AlignTool';
+import DescentController from '../Object/DescentController';
+import FontKeys from '../Config/FontKeys';
+import SFXController from '../Object/SFXController';
 
 const DPR = window.devicePixelRatio;
 
 export default class GameUI extends Phaser.Scene {
+  public static level;
+
   private score = 0;
   private scoreText?: Phaser.GameObjects.Text;
-
   private timePassed = 0;
   private timePassedText?: Phaser.GameObjects.Text;
-
-  public static level;
   private levelText?: Phaser.GameObjects.Text;
-
   private subscriptions: SubscriptionLike[] = [];
-
   private mouseCoordsText?: Phaser.GameObjects.Text;
+  private countDownNextBubbleSpawnText?: Phaser.GameObjects.Text;
+  private countdownNoteText?: Phaser.GameObjects.Text;
+  private levelTextTween;
+  private gameScene: Phaser.Scene;
+  private isLevelUpWarningTinted: boolean;
+  private isTimerWarningTinted: boolean;
+  private sfxController?: SFXController;
+
+  get _score(): number {
+    return this.score;
+  }
 
   constructor() {
     super({ key: SceneKeys.GameUI });
   }
 
-  init() {
+  public setSFXController(sfxController: SFXController): void {
+    this.sfxController = sfxController;
+  }
+
+  init(): void {
     GameUI.level = 1;
     this.score = 0;
     this.timePassed = 0;
+    this.levelTextTween = undefined;
+    this.isLevelUpWarningTinted = false;
+    this.isTimerWarningTinted = false;
   }
 
-  create(data?: IGameUI) {
+  create(data?: IGameUI): void {
+    this.gameScene = this.scene.get(SceneKeys.Game);
+
     const width = this.scale.width;
     this.add.rectangle(
       width * 0.5,
@@ -48,13 +69,13 @@ export default class GameUI extends Phaser.Scene {
 
     this.mouseCoordsText = this.add.text(offsetX, this.scale.height - 100, '', {
       fontSize: 22 * DPR,
-      fontFamily: 'SHPinscher-Regular'
+      fontFamily: FontKeys.SHPinscherRegular
     });
 
     const startingText = this.createScoreText(this.score);
     this.scoreText = this.add.text(offsetX, offsetY, startingText, {
       fontSize: 22 * DPR,
-      fontFamily: 'SHPinscher-Regular'
+      fontFamily: FontKeys.SHPinscherRegular
     });
 
     const rx = width - offsetX;
@@ -62,7 +83,7 @@ export default class GameUI extends Phaser.Scene {
     this.timePassedText = this.add
       .text(rx, offsetY, timePassedText, {
         fontSize: 22 * DPR,
-        fontFamily: 'SHPinscher-Regular'
+        fontFamily: FontKeys.SHPinscherRegular
       })
       .setOrigin(1, 0);
 
@@ -70,17 +91,40 @@ export default class GameUI extends Phaser.Scene {
     this.levelText = this.add
       .text((rx - offsetX) / 2, offsetY, levelText, {
         fontSize: 22 * DPR,
-        fontFamily: 'SHPinscher-Regular'
+        fontFamily: FontKeys.SHPinscherRegular
       })
       .setOrigin(1, 0);
 
     this.time.addEvent({
       delay: 1000, // ms
       callback: this.updateTime,
-      //args: [],
       callbackScope: this,
       loop: true
     });
+
+    this.countdownNoteText = this.add
+      .text(0, 0, 'Until next spawn', {
+        fontSize: 30 * DPR,
+        fontFamily: FontKeys.SHPinscherRegular
+      })
+      .setOrigin(0.5, 0.5)
+      .setAlpha(0.5);
+    AlignTool.centerHorizontal(this.gameScene, this.countdownNoteText);
+    AlignTool.alignY(this.gameScene, this.countdownNoteText, 0.625);
+
+    const tempCountdown = this.createCountdown(100);
+    this.countDownNextBubbleSpawnText = this.add
+      .text(0, 0, tempCountdown, {
+        fontSize: 150 * DPR,
+        fontFamily: FontKeys.SHPinscherRegular
+      })
+      .setOrigin(0.5, 0.5)
+      .setAlpha(0.5);
+    AlignTool.alignY(this.gameScene, this.countDownNextBubbleSpawnText, 0.7);
+    AlignTool.centerHorizontal(
+      this.gameScene,
+      this.countDownNextBubbleSpawnText
+    );
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.subscriptions.forEach((sub) => sub.unsubscribe());
@@ -100,17 +144,12 @@ export default class GameUI extends Phaser.Scene {
       this.addToScore(Math.floor(count * multiplier));
     });
 
-    // const addedSub = data.ballsAdded?.subscribe((count) => {
-    //   this.infections += count;
-    //   this.updateInfections(this.infections);
-    // });
+    const countdownSub = data.countdownChanged?.subscribe((cd) => {
+      this.updateCountdown(cd);
+    });
 
-    // const infectionsSub = data.infectionsChanged?.subscribe((count) => {
-    //   this.infections = count;
-    //   this.updateInfections(this.infections);
-    // });
-
-    const subs = [destroyedSub];
+    const subs = [countdownSub, destroyedSub];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     subs.filter((sub) => sub).forEach((sub) => this.subscriptions.push(sub!));
   }
 
@@ -120,6 +159,40 @@ export default class GameUI extends Phaser.Scene {
 
   private createLevelText(level: number) {
     return `Level: ${level.toLocaleString()}`;
+  }
+
+  private createCountdown(cd: number) {
+    return `${TimerUtil.convertTime(cd, DISPLAY_MODE.SECOND)}`;
+  }
+
+  private updateCountdown(cd: number) {
+    if (!this.countDownNextBubbleSpawnText) {
+      return;
+    }
+    if (cd <= 10) {
+      if (!this.isTimerWarningTinted) {
+        this.isTimerWarningTinted = true;
+        this.countDownNextBubbleSpawnText.setTint(
+          0xff0000,
+          0xffff00,
+          0xffff00,
+          0xffff00
+        );
+        this.countdownNoteText.setTint(0xff0000, 0xffff00, 0xffff00, 0xffff00);
+      }
+    } else {
+      if (this.isTimerWarningTinted) {
+        this.isTimerWarningTinted = false;
+        this.countDownNextBubbleSpawnText.setTint(
+          0xffffff,
+          0xffffff,
+          0xffffff,
+          0xffffff
+        );
+        this.countdownNoteText.setTint(0xffffff, 0xffffff, 0xffffff, 0xffffff);
+      }
+    }
+    this.countDownNextBubbleSpawnText.text = this.createCountdown(cd);
   }
 
   private addToScore(points: number) {
@@ -134,15 +207,8 @@ export default class GameUI extends Phaser.Scene {
     this.scoreText.text = this.createScoreText(score);
   }
 
-  //   private createInfectionsText(infections: number) {
-  //     return `${infections.toLocaleString()} Infections`;
-  //   }
-
   private createTimePassedText(seconds: number) {
     return `Time Passed ${TimerUtil.convertTime(seconds, DISPLAY_MODE.HOUR)}`;
-    // return `Time Passed ${Math.floor(seconds / 3600)}h : ${Math.floor(
-    //   (seconds % 3600) / 60
-    // )}m : ${Math.floor((seconds % 3600) % 60)}s `;
   }
 
   private updateTime() {
@@ -153,7 +219,7 @@ export default class GameUI extends Phaser.Scene {
     this.timePassed += 1;
     this.timePassedText.text = this.createTimePassedText(this.timePassed);
 
-    this.levelUp(this.timePassed);
+    if (GameUI.level <= 20) this.levelUp(this.timePassed);
   }
 
   private levelUpTimes = [
@@ -175,20 +241,60 @@ export default class GameUI extends Phaser.Scene {
     150,
     160,
     170,
-    180
+    180 // level 20 MAX
   ];
 
   private levelUp(timePassed) {
-    if (timePassed >= this.levelUpTimes[GameUI.level - 1])
+    if (
+      GameUI.level + 1 ===
+      DescentController.descentLevelSequence[DescentController.descentIndex]
+    ) {
+      if (!this.isLevelUpWarningTinted) {
+        this.isLevelUpWarningTinted = true;
+        this.levelText.setTint(0xff0000, 0xffff00, 0xffff00, 0xffff00);
+      }
+    } else {
+      if (this.isLevelUpWarningTinted) {
+        this.isLevelUpWarningTinted = false;
+        this.levelText.setTint(0xffffff, 0xffffff, 0xffffff, 0xffffff);
+      }
+    }
+    const timeUntilLevelUp = this.levelUpTimes[GameUI.level - 1] - timePassed;
+    if (timeUntilLevelUp <= 5) {
+      if (this.levelTextTween === undefined) this.blinkLevelText();
+    } else if (this.levelTextTween !== undefined) {
+      this.stopBlinkLevelText();
+    }
+    if (timeUntilLevelUp <= 0) {
+      this.sfxController.playLevelUpSFX();
       this.updateLevel(++GameUI.level);
+    }
   }
 
-  public updateMouseCoordsText(gamescene: Phaser.Scene) {
-    this.mouseCoordsText.text =
-      Math.round(gamescene.game.input.mousePointer.x) +
-      '/' +
-      Math.round(gamescene.game.input.mousePointer.y);
+  private blinkLevelText() {
+    this.levelTextTween = this.tweens.add({
+      targets: this.levelText,
+      duration: 300,
+      alpha: 0,
+      ease: 'Sine.easeInOut',
+      callbackScope: this,
+      yoyo: true,
+      loop: -1
+    });
   }
+
+  private stopBlinkLevelText() {
+    this.levelTextTween.remove();
+    this.levelText.alpha = 1;
+    this.levelTextTween = undefined;
+  }
+
+  // public updateMouseCoordsText(gamescene: Phaser.Scene): void {
+  //   this.mouseCoordsText.text =
+  //     Math.round(gamescene.game.input.mousePointer.x) +
+  //     '/' +
+  //     Math.round(gamescene.game.input.mousePointer.y);
+  // }
 
   private updateLevel(level: number) {
     if (!level) {

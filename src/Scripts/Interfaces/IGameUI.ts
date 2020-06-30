@@ -2,8 +2,7 @@ import { Observable } from 'rxjs';
 
 interface IGameUI {
   bubblesDestroyed?: Observable<number>;
-  bubblesAdded?: Observable<number>;
-  infectionsChanged: Observable<number>;
+  countdownChanged?: Observable<number>;
 }
 
 export { IGameUI };

@@ -9,7 +9,8 @@ type ObjectTransform =
       Phaser.GameObjects.Components.Size)
   | Phaser.GameObjects.Arc
   | Phaser.GameObjects.Container
-  | Phaser.GameObjects.TileSprite;
+  | Phaser.GameObjects.TileSprite
+  | Phaser.GameObjects.Text;
 
 export default class AlignTool {
   /**

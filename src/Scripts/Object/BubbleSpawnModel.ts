@@ -1,80 +1,34 @@
-import { BehaviorSubject } from 'rxjs';
 import { IBubbleSpawnModel } from '../Interfaces/IBubbleSpawnModel';
 
 export default class BubbleSpawnModel implements IBubbleSpawnModel {
-  private accumulatedTime = 0;
-  private populationCount = 0;
-
-  private populationChangedSubject: BehaviorSubject<number>;
-
-  get population() {
-    return this.populationCount;
-  }
-
-  constructor(initialPopulation = 0) {
-    this.populationCount = initialPopulation;
-    this.populationChangedSubject = new BehaviorSubject<number>(
-      initialPopulation
-    );
-  }
-
-  onPopulationChanged() {
-    return this.populationChangedSubject.asObservable();
-  }
-
-  getNext(count: number) {
-    if (count > this.populationCount) {
-      const total = this.populationCount;
-      this.decreatePopulation(total);
-      return total;
-    }
-
-    this.decreatePopulation(count);
-    return count;
-  }
-
-  update(dt: number) {
-    //   if (this.populationCount <= 0) {
-    //     return;
-    //   }
-    //   this.accumulatedTime += dt;
-    //   const rate = this.getBubbleSpawnRate();
-    //   if (this.accumulatedTime < rate) {
-    //     return;
-    //   }
-    // Descend!
-    // increase by 10% of population
-    // const increase = Math.floor(this.populationCount * 0.1);
-    // this.increasePopulation(increase);
-    // this.accumulatedTime = this.accumulatedTime - rate;
-  }
-
-  public static getBubbleSpawnRate(level: number) {
+  public getBubbleSpawnRate(level: number): number {
+    // how long the player has until a row of bubble is spawned topmost. Gets shorter the higher the level is
     if (level < 2) {
-      return 2000;
+      return 20000;
     }
     if (level <= 5) {
-      return 500;
+      return 18000;
+    }
+    if (level <= 8) {
+      return 15000;
+    }
+    if (level <= 13) {
+      return 12000;
+    }
+    if (level <= 15) {
+      return 11000;
+    }
+    if (level <= 18) {
+      return 10000;
+    }
+    if (level <= 19) {
+      return 8000;
+    }
+    if (level <= 20) {
+      return 6000;
     }
 
-    return 5500;
-  }
-
-  private increasePopulation(amount: number) {
-    if (this.populationCount + amount >= Number.MAX_SAFE_INTEGER) {
-      return;
-    }
-
-    this.populationCount += amount;
-    this.populationChangedSubject.next(this.populationCount);
-  }
-
-  private decreatePopulation(amount: number) {
-    if (this.populationCount - amount < 0) {
-      amount = this.populationCount;
-    }
-
-    this.populationCount -= amount;
-    this.populationChangedSubject.next(this.populationCount);
+    // level higher than 20
+    return 5000;
   }
 }
