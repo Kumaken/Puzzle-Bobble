@@ -302,7 +302,7 @@ export default class BubbleGrid {
     if (matches.length < 3) {
       this.bubblesCount += 1;
       await this.animateBubbleAttach(bRow, bCol, tx, ty, newBubble);
-      console.table(this.grid);
+
       return;
     }
     // remove matched bubbles from grid but not visually yet
@@ -349,8 +349,6 @@ export default class BubbleGrid {
     if (danglingBubbles.length > 0) {
       await this.animateBubbleFall(danglingBubbles);
     }
-
-    console.table(this.grid);
   }
 
   /**

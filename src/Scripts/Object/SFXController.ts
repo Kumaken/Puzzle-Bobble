@@ -23,7 +23,7 @@ export default class SFXController {
   playBGMMusic(): void {
     this.sound.play(AudioKeys.InGameBGM, {
       loop: true,
-      volume: 0.25
+      volume: 0.35
     });
   }
 
