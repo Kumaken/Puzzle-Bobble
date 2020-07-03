@@ -3,6 +3,7 @@ import Bubble from './Bubble';
 import { IBubble } from '../Interfaces/IBubble';
 import { IStaticBubblePool } from '../Interfaces/IStaticBubblePool';
 import ColorConfig from '../Config/ColorConfig';
+import PreloadScene from '../Scene/PreloadScene';
 export default class StaticBubblePool extends Phaser.Physics.Arcade.StaticGroup
   implements IStaticBubblePool {
   constructor(
@@ -51,6 +52,11 @@ export default class StaticBubblePool extends Phaser.Physics.Arcade.StaticGroup
     }
 
     bubble.anims.play(bubble._texture + '_idle', true);
+    bubble.setScale(
+      PreloadScene.screenScale.scaleWidth,
+      PreloadScene.screenScale.scaleHeight
+    );
+
     (bubble.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject();
     return bubble;
   }

@@ -9,8 +9,7 @@ import AlignTool from '../Util/AlignTool';
 import DescentController from '../Object/DescentController';
 import FontKeys from '../Config/FontKeys';
 import SFXController from '../Object/SFXController';
-
-const DPR = window.devicePixelRatio;
+import PreloadScene from './PreloadScene';
 
 export default class GameUI extends Phaser.Scene {
   public static level;
@@ -54,43 +53,46 @@ export default class GameUI extends Phaser.Scene {
   create(data?: IGameUI): void {
     this.gameScene = this.scene.get(SceneKeys.Game);
 
-    const width = this.scale.width;
+    const width = AlignTool.getXfromScreenWidth(this, 1);
     this.add.rectangle(
       width * 0.5,
       0,
       width,
-      100 * DPR,
+      AlignTool.getYfromScreenHeight(this, 0.1),
       ColorConfig.Black,
       0.7
     );
 
-    const offsetX = 10 * DPR;
-    const offsetY = 10 * DPR;
+    const posY = AlignTool.getYfromScreenHeight(this, 0.01);
 
-    this.mouseCoordsText = this.add.text(offsetX, this.scale.height - 100, '', {
-      fontSize: 22 * DPR,
-      fontFamily: FontKeys.SHPinscherRegular
-    });
+    // this.mouseCoordsText = this.add.text(offsetX, this.scale.height - 100, '', {
+    //   fontSize: 22 * PreloadScene.screenScale.scaleWidth,
+    //   fontFamily: FontKeys.SHPinscherRegular
+    // });
 
     const startingText = this.createScoreText(this.score);
-    this.scoreText = this.add.text(offsetX, offsetY, startingText, {
-      fontSize: 22 * DPR,
-      fontFamily: FontKeys.SHPinscherRegular
-    });
+    this.scoreText = this.add.text(
+      AlignTool.getXfromScreenWidth(this, 0.05),
+      posY,
+      startingText,
+      {
+        fontSize: 30 * PreloadScene.screenScale.scaleWidth,
+        fontFamily: FontKeys.SHPinscherRegular
+      }
+    );
 
-    const rx = width - offsetX;
-    const timePassedText = this.createTimePassedText(0);
-    this.timePassedText = this.add
-      .text(rx, offsetY, timePassedText, {
-        fontSize: 22 * DPR,
+    const levelText = this.createLevelText(1);
+    this.levelText = this.add
+      .text(AlignTool.getXfromScreenWidth(this, 0.5), posY, levelText, {
+        fontSize: 30 * PreloadScene.screenScale.scaleWidth,
         fontFamily: FontKeys.SHPinscherRegular
       })
       .setOrigin(1, 0);
 
-    const levelText = this.createLevelText(1);
-    this.levelText = this.add
-      .text((rx - offsetX) / 2, offsetY, levelText, {
-        fontSize: 22 * DPR,
+    const timePassedText = this.createTimePassedText(0);
+    this.timePassedText = this.add
+      .text(AlignTool.getXfromScreenWidth(this, 0.975), posY, timePassedText, {
+        fontSize: 30 * PreloadScene.screenScale.scaleWidth,
         fontFamily: FontKeys.SHPinscherRegular
       })
       .setOrigin(1, 0);
@@ -104,7 +106,7 @@ export default class GameUI extends Phaser.Scene {
 
     this.countdownNoteText = this.add
       .text(0, 0, 'Until next spawn', {
-        fontSize: 30 * DPR,
+        fontSize: 30 * PreloadScene.screenScale.scaleWidth,
         fontFamily: FontKeys.SHPinscherRegular
       })
       .setOrigin(0.5, 0.5)
@@ -115,7 +117,7 @@ export default class GameUI extends Phaser.Scene {
     const tempCountdown = this.createCountdown(100);
     this.countDownNextBubbleSpawnText = this.add
       .text(0, 0, tempCountdown, {
-        fontSize: 150 * DPR,
+        fontSize: 150 * PreloadScene.screenScale.scaleWidth,
         fontFamily: FontKeys.SHPinscherRegular
       })
       .setOrigin(0.5, 0.5)

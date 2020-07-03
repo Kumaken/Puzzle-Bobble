@@ -2,6 +2,8 @@ export type PhaserConfig = Phaser.Types.Core.GameConfig;
 
 import { getResolution } from '../Util/Util';
 
+console.log('getRes', getResolution().width, getResolution().height);
+
 export const config: PhaserConfig = {
   title: 'PhaserGame',
   type: Phaser.AUTO,

@@ -18,21 +18,12 @@ import DescentController from '../Object/DescentController';
 import SFXController from '../Object/SFXController';
 import Shooter from '../Object/Shooter';
 import AlignTool from '../Util/AlignTool';
+import PreloadScene from './PreloadScene';
 enum GameState {
   Playing,
   GameOver,
   GameWin
 }
-
-// GAME SETTINGS
-const gameSettings = {
-  bubblesPerRow: 10,
-  initialBubbleRows: 6,
-  maxBubbleCount: 150,
-  initialDescent: 45,
-  rowHeight: 55,
-  gap: 4
-};
 
 export default class LevelScene extends Phaser.Scene {
   private fpsText: FpsText;
@@ -43,7 +34,7 @@ export default class LevelScene extends Phaser.Scene {
   private gameUI: GameUI;
   private descentController?: DescentController;
   private sfxController?: SFXController;
-
+  private gameSettings;
   // background
   private baseBG;
   private layer1;
@@ -70,22 +61,36 @@ export default class LevelScene extends Phaser.Scene {
     // Setup background:
     this.setupBackground();
 
-    const width = this.scale.width;
-    const height = this.scale.height;
-
     const staticBubblePool = this.add.staticBubblePool(TextureKeys.BubbleBlack);
+
+    // GAME SETTINGS
+    this.gameSettings = {
+      bubblesPerRow: 10,
+      initialBubbleRows: 6,
+      maxBubbleCount: 150,
+      initialDescent: 0,
+      rowHeight: undefined,
+      gap: 85 * PreloadScene.screenScale.scaleHeight
+    };
 
     // Setup Bubble Grid
     this.grid = new BubbleGrid(
       this,
       staticBubblePool,
-      gameSettings.bubblesPerRow
+      this.gameSettings.bubblesPerRow
     );
     this.grid
       .setBubbleLayoutData(
-        new BubbleLayoutData(this.bubbleSpawnModel, gameSettings.bubblesPerRow)
+        new BubbleLayoutData(
+          this.bubbleSpawnModel,
+          this.gameSettings.bubblesPerRow
+        )
       )
       .generateInitialBubbles();
+
+    // GAME SETTINGS
+    this.gameSettings.initialDescent = this.grid.effGridY;
+    this.gameSettings.rowHeight = this.grid.bubbleInterval;
 
     // Setup world boundary
     this.physics.world.setBounds(
@@ -94,46 +99,76 @@ export default class LevelScene extends Phaser.Scene {
       this.grid.gridWidth,
       this.grid.gridHeight
     );
-    this.physics.world.setBoundsCollision(true, true, true, true);
+    this.physics.world.setBoundsCollision(true, true, false, true);
 
     // Shooter Platform:
     const shooterFoundationIMG = this.textures
       .get(TextureKeys.ShooterFoundation)
       .getSourceImage();
-    this.add.sprite(
-      width * 0.5,
-      height - shooterFoundationIMG.height / 2,
-      TextureKeys.ShooterFoundation
-    );
+    const shooterFoundationHeight =
+      shooterFoundationIMG.height * PreloadScene.screenScale.scaleHeight;
+    this.add
+      .sprite(
+        PreloadScene.screenWidth * 0.5,
+        PreloadScene.screenHeight - shooterFoundationHeight * 0.5,
+        TextureKeys.ShooterFoundation
+      )
+      .setScale(
+        PreloadScene.screenScale.scaleWidth,
+        PreloadScene.screenScale.scaleHeight
+      );
 
     // Next bubble sign:
     const nextBubbleSignIMG = this.textures
       .get(TextureKeys.PlatformSign)
       .getSourceImage();
-    this.add.sprite(
-      width * 0.5 + 200,
-      height - nextBubbleSignIMG.height / 2 - 30,
-      TextureKeys.PlatformSign
-    );
+    const nextSignHeight =
+      nextBubbleSignIMG.height * PreloadScene.screenScale.scaleHeight;
+    this.add
+      .sprite(
+        PreloadScene.screenWidth * 0.5 + 200,
+        PreloadScene.screenHeight - nextSignHeight * 0.5 - 30,
+        TextureKeys.PlatformSign
+      )
+      .setScale(
+        PreloadScene.screenScale.scaleWidth,
+        PreloadScene.screenScale.scaleHeight
+      );
 
     // Next bubble Platform:
     const bubblePlatformIMG = this.textures
       .get(TextureKeys.BubblePlatform)
       .getSourceImage();
-    this.add.sprite(
-      width * 0.5 + 200,
-      height - bubblePlatformIMG.height / 2,
-      TextureKeys.BubblePlatform
-    );
+    const bubblePlatformHeight =
+      bubblePlatformIMG.height * PreloadScene.screenScale.scaleHeight;
+    this.add
+      .sprite(
+        PreloadScene.screenWidth * 0.5 + 200,
+        PreloadScene.screenHeight - bubblePlatformHeight * 0.5,
+        TextureKeys.BubblePlatform
+      )
+      .setScale(
+        PreloadScene.screenScale.scaleWidth,
+        PreloadScene.screenScale.scaleHeight
+      );
 
     // Shooter:
     const shooterIMG = this.textures.get(TextureKeys.Shooter).getSourceImage();
-    this.shooter = this.add.shooter(
-      width * 0.5 - 20,
-      height - shooterIMG.height / 2 - 30,
-      TextureKeys.Shooter
+    const shooterHeight =
+      shooterIMG.height * PreloadScene.screenScale.scaleHeight;
+    this.shooter = this.add
+      .shooter(
+        PreloadScene.screenWidth * 0.5 - 20,
+        PreloadScene.screenHeight - shooterHeight * 0.5 - 30,
+        TextureKeys.Shooter
+      )
+      .setScale(
+        PreloadScene.screenScale.scaleWidth,
+        PreloadScene.screenScale.scaleHeight
+      );
+    this.shooter.setShooterGuide(
+      new ShotGuide(this, this.grid, staticBubblePool)
     );
-    this.shooter.setShooterGuide(new ShotGuide(this, this.grid));
 
     // Shooter Bubble Pool:
     const bubblePool = this.add.bubblePool(TextureKeys.BubbleBlack);
@@ -158,10 +193,11 @@ export default class LevelScene extends Phaser.Scene {
       this.bubbleSpawnModel,
       this.sfxController
     );
+
     this.descentController.setInitialDescent(
-      gameSettings.initialDescent +
-        (gameSettings.initialBubbleRows - 1) * gameSettings.rowHeight +
-        gameSettings.gap
+      this.gameSettings.initialDescent +
+        this.gameSettings.initialBubbleRows * this.gameSettings.rowHeight -
+        this.gameSettings.gap
     );
 
     const bubbleSub = this.grid
@@ -302,8 +338,8 @@ export default class LevelScene extends Phaser.Scene {
     this.baseBG = this.add.tileSprite(
       AlignTool.getCenterHorizontal(this),
       AlignTool.getCenterVertical(this),
-      raw_bg_img.width,
-      raw_bg_img.height,
+      raw_bg_img.width * PreloadScene.screenScale.scaleWidth,
+      raw_bg_img.height * PreloadScene.screenScale.scaleHeight,
       TextureKeys.BaseBackground
     );
 
@@ -314,8 +350,8 @@ export default class LevelScene extends Phaser.Scene {
       this[`layer${i}`] = this.add.tileSprite(
         AlignTool.getCenterHorizontal(this),
         AlignTool.getCenterVertical(this),
-        raw_img.width,
-        raw_img.height,
+        raw_img.width * PreloadScene.screenScale.scaleWidth,
+        raw_img.height * PreloadScene.screenScale.scaleHeight,
         TextureKeys[`Layer${i}`]
       );
     }

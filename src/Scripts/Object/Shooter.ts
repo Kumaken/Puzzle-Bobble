@@ -5,12 +5,9 @@ import { IShooter } from '../Interfaces/IShooter';
 import { IBubble } from '../Interfaces/IBubble';
 import { IBubblePool } from '../Interfaces/IBubblePool';
 import { IShotGuide } from '../Interfaces/IShotGuide';
-
-const DPR = window.devicePixelRatio;
-const RADIUS = 0 * DPR;
+import PreloadScene from '../Scene/PreloadScene';
 
 const HALF_PI = Math.PI * 0.5;
-const GAP = 0;
 
 export default class Shooter extends Phaser.GameObjects.Container
   implements IShooter {
@@ -21,10 +18,6 @@ export default class Shooter extends Phaser.GameObjects.Container
   private shootSubject = new Subject<IBubble>();
   private nextBubble: IBubble;
   public static isShooting: boolean;
-
-  get radius(): number {
-    return RADIUS;
-  }
 
   get shooterHeight(): number {
     return this._height;
@@ -75,15 +68,17 @@ export default class Shooter extends Phaser.GameObjects.Container
       bubble = this.bubblePool.spawn(0, 0);
     }
 
+    bubble.setScale(0);
     bubble.disableBody();
-    bubble.scale = 0;
     bubble.x = this.x + 220;
     bubble.y = this.y + 95;
 
     this.nextBubble = bubble;
+
     this.scene.add.tween({
       targets: this.nextBubble,
-      scale: 1,
+      scaleX: PreloadScene.screenScale.scaleWidth,
+      scaleY: PreloadScene.screenScale.scaleHeight,
       ease: 'Bounce.easeOut',
       duration: 500
     });
@@ -99,14 +94,15 @@ export default class Shooter extends Phaser.GameObjects.Container
 
     const bubbleRadius = this.bubble.radius;
 
-    this.bubble.x = this.x - vec.x * (RADIUS + bubbleRadius + GAP);
-    this.bubble.y = this.y - vec.y * (RADIUS + bubbleRadius + GAP);
+    this.bubble.x = this.x - vec.x * bubbleRadius;
+    this.bubble.y = this.y - vec.y * bubbleRadius;
 
     this.bubble.scale = 0;
 
     this.scene.add.tween({
       targets: this.bubble,
-      scale: 1,
+      scaleX: PreloadScene.screenScale.scaleWidth,
+      scaleY: PreloadScene.screenScale.scaleHeight,
       ease: 'Bounce.easeOut',
       duration: 500
     });
@@ -136,14 +132,16 @@ export default class Shooter extends Phaser.GameObjects.Container
     const bubbleRadius = this.bubble.radius;
     const physicsRadius = this.bubble.physicsRadius;
 
-    this.bubble.x = this.x + vec.x * (RADIUS + bubbleRadius + GAP);
-    this.bubble.y = this.y + vec.y * (RADIUS + bubbleRadius + GAP);
+    this.bubble.x = this.x + vec.x * bubbleRadius;
+    this.bubble.y = this.y + vec.y * bubbleRadius;
 
+    const guideRadius =
+      this.bubble.radius * PreloadScene.screenScale.scaleWidth;
     this.shotGuide?.showFrom(
       this.bubble.x,
       this.bubble.y,
       vec,
-      76 - physicsRadius / 2, // grid right x
+      guideRadius - physicsRadius / 2, // grid right x
       this.bubble.color
     );
   }

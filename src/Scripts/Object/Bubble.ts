@@ -2,6 +2,8 @@ import 'phaser';
 import ColorConfig from '../Config/ColorConfig';
 import { IBubble } from '../Interfaces/IBubble';
 import TextureKeys, { colorToBubbleTexture } from '../Config/TextureKeys';
+import AlignTool from '../Util/AlignTool';
+import PreloadScene from '../Scene/PreloadScene';
 
 const ALL_COLORS = [
   ColorConfig.Red,
@@ -30,7 +32,7 @@ export default class Bubble extends Phaser.Physics.Arcade.Sprite
   }
 
   get radius(): number {
-    return this.width * 0.5;
+    return this.displayWidth * 0.5;
   }
 
   // Collider radius is slightly wider than actual bubble radius

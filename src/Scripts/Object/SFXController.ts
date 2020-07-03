@@ -29,26 +29,26 @@ export default class SFXController {
 
   playDescendSFX(): void {
     this.sound.play(AudioKeys.Descend, {
-      volume: 1
+      volume: 0.5
     });
   }
 
   playSpawnBubbleSFX(): void {
     this.sound.play(AudioKeys.BubbleSpawn, {
-      volume: 1
+      volume: 0.5
     });
   }
 
   playLevelUpSFX(): void {
     this.sound.play(AudioKeys.LevelUp, {
-      volume: 1
+      volume: 0.5
     });
   }
 
   handleShootBubble(onShoot: Observable<IBubble>): void {
     const sub = onShoot.subscribe(() => {
       this.sound.play(AudioKeys.BubbleShoot, {
-        volume: 0.3
+        volume: 0.5
       });
     });
 
@@ -58,7 +58,7 @@ export default class SFXController {
   handleBubbleAttached(attached: Observable<IBubble>): void {
     const sub = attached.subscribe(() => {
       this.sound.play(AudioKeys.BubbleAttach, {
-        volume: 0.2
+        volume: 0.5
       });
     });
 

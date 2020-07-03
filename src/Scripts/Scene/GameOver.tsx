@@ -25,8 +25,8 @@ export default class GameOver extends Phaser.Scene {
 
   create(): void {
     this.scene.bringToTop(SceneKeys.GameOver);
-    const width = DEFAULT_WIDTH;
-    const height = DEFAULT_HEIGHT;
+    const width = AlignTool.getXfromScreenWidth(this, 1);
+    const height = AlignTool.getYfromScreenHeight(this, 1);
     const x = AlignTool.getCenterHorizontal(this);
     const y = AlignTool.getCenterVertical(this);
 
@@ -45,11 +45,11 @@ export default class GameOver extends Phaser.Scene {
       .setOrigin(0.5, 0.5)
       .setScale(0, 0);
 
-    const scoreFontSize = fontSize * 0.25;
+    const scoreFontSize = Math.min(width * 0.075, 225);
     const scoreLabel = this.add
-      .text(x, height * 0.4, `your score:`, {
+      .text(x, height * 0.475, `your score:`, {
         fontFamily: FontKeys.SilkScreenA,
-        scoreFontSize,
+        fontSize: scoreFontSize,
         align: 'center',
         stroke: ColorConfig.Black,
         strokeThickness: 8
@@ -58,7 +58,7 @@ export default class GameOver extends Phaser.Scene {
       .setScale(0, 0);
 
     const score = this.add
-      .text(x, height * 0.45, `${this.score}`, {
+      .text(x, height * 0.55, `${this.score}`, {
         fontFamily: FontKeys.SilkScreenA,
         fontSize,
         align: 'center',
@@ -69,16 +69,14 @@ export default class GameOver extends Phaser.Scene {
       .setScale(0, 0);
 
     const tryAgainBtn = this.add
-      .dom(x, height * 0.6, primaryButton('Retry'))
+      .dom(x, height * 0.8, primaryButton('Retry'))
       .setScale(0, 0)
       .addListener('click')
       .on('click', () => {
         this.uiClickSubject.next();
 
         this.scene.stop(SceneKeys.Game);
-        this.scene.start(SceneKeys.Game, {
-          target: SceneKeys.Game
-        });
+        this.scene.start(SceneKeys.Game);
       });
 
     // const exitBtn = this.add

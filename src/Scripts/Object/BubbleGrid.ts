@@ -10,6 +10,7 @@ import TextureKeys from '../Config/TextureKeys';
 import Shooter from './Shooter';
 import AlignTool from '../Util/AlignTool';
 import { DEFAULT_HEIGHT } from '../Util/Constant';
+import PreloadScene from '../Scene/PreloadScene';
 
 interface IGridPosition {
   row: number;
@@ -27,7 +28,7 @@ export default class BubbleGrid {
   private pool: IStaticBubblePool;
   private bubbleLayoutData?: BubbleLayoutData;
   // Individual Bubble Properties
-  private bubbleSize: Phaser.Structs.Size;
+  public bubbleSize: Phaser.Structs.Size;
   private bubblesCount = 0;
   // Bubble grid properties
   private grid: IBubbleOrNone[][] = [];
@@ -43,11 +44,11 @@ export default class BubbleGrid {
   public effGridY: number;
   private bubbleLeftmostX: number;
   private bubbleRightmostX: number;
-  public sideGap = 3;
+  public sideGap = 3 * PreloadScene.screenScale.scaleWidth;
   // Descend Properties
   public descentInterval: number;
   // Border Frame Properties
-  public borderWidth = 22;
+  public borderWidth = 22 * PreloadScene.screenScale.scaleWidth;
   // Subscription
   private bubblesDestroyedSubject = new Subject<number>();
   private bubbleWillBeDestroyed = new Subject<IBubble>();
@@ -99,11 +100,15 @@ export default class BubbleGrid {
     this.pool = pool;
     this.bubblesPerRow = bubblesPerRow;
     const sample = this.pool.spawn(0, 0, null);
-    this.bubbleSize = new Phaser.Structs.Size(sample.width, sample.height);
+    this.bubbleSize = new Phaser.Structs.Size(
+      sample.displayWidth,
+      sample.displayHeight
+    );
     this.pool.despawn(sample);
 
-    this.midPoint = this.scene.scale.width * 0.5 + this.bubbleSize.width * 0.2;
-    this.gridHeight = DEFAULT_HEIGHT;
+    this.midPoint =
+      AlignTool.getCenterHorizontal(this.scene) + this.bubbleSize.width * 0.2;
+    this.gridHeight = DEFAULT_HEIGHT * PreloadScene.screenScale.scaleHeight;
     this.gridWidth =
       this.bubbleSize.width * bubblesPerRow + this.bubbleSize.width * 0.5;
     this.gridX =

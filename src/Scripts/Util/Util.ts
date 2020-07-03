@@ -3,8 +3,8 @@ export const getResolution = (): { width: number; height: number } => {
   let h = 1200;
 
   if (isTargetDevice() !== -1) {
-    w = window.innerWidth * window.devicePixelRatio;
-    h = window.innerHeight * window.devicePixelRatio;
+    w = window.innerWidth; //* window.devicePixelRatio;
+    h = window.innerHeight; //* window.devicePixelRatio;
   }
   return { width: w, height: h };
 };

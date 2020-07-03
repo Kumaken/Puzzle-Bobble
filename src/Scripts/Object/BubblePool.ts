@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import Bubble from './Bubble';
 import { IBubblePool } from '../Interfaces/IBubblePool';
 import { IBubble } from '../Interfaces/IBubble';
+import PreloadScene from '../Scene/PreloadScene';
 
 /**
  * Bubble pool class: Object Pool for bubble loaded into the shooter (dynamic)
@@ -52,6 +53,7 @@ export default class BubblePool extends Phaser.Physics.Arcade.Group
 
     bubble.randomizeColor();
     bubble.anims.play(bubble._texture + '_idle', true);
+
     return bubble;
   }
 

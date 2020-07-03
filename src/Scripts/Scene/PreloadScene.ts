@@ -4,8 +4,18 @@ import SceneKeys from '../Config/SceneKeys';
 import GameEvents from '../Config/GameEvents';
 import AnimationKeys from '../Config/AnimationKeys';
 import AudioKeys from '../Config/AudioKeys';
+import AlignTool from '../Util/AlignTool';
 
 export default class PreloadScene extends Phaser.Scene {
+  // constants
+  static screenWidth: number;
+  static screenHeight: number;
+  static screenScale: {
+    scaleWidth: number;
+    scaleHeight: number;
+  };
+  static DPR: number;
+
   constructor() {
     super({ key: SceneKeys.Preload });
   }
@@ -77,6 +87,13 @@ export default class PreloadScene extends Phaser.Scene {
   create(): void {
     this.game.events.emit(GameEvents.PreloadFinished);
     this.prepareBubbleAnimation();
+
+    // Prepare screen static size constants:
+    PreloadScene.screenWidth = AlignTool.getXfromScreenWidth(this, 1);
+    PreloadScene.screenHeight = AlignTool.getYfromScreenHeight(this, 1);
+    PreloadScene.screenScale = AlignTool.getScaleScreen(this);
+    PreloadScene.DPR = window.devicePixelRatio;
+    console.log(PreloadScene.screenWidth, PreloadScene.screenHeight);
   }
 
   private bubbleTextures = [
@@ -126,6 +143,6 @@ export default class PreloadScene extends Phaser.Scene {
   private handlePreloadFinished() {
     this.scene.stop(SceneKeys.Preload);
 
-    this.scene.start(SceneKeys.TitleScreen);
+    this.scene.start(SceneKeys.Game);
   }
 }
