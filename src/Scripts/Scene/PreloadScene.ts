@@ -93,7 +93,6 @@ export default class PreloadScene extends Phaser.Scene {
     PreloadScene.screenHeight = AlignTool.getYfromScreenHeight(this, 1);
     PreloadScene.screenScale = AlignTool.getScaleScreen(this);
     PreloadScene.DPR = window.devicePixelRatio;
-    console.log(PreloadScene.screenWidth, PreloadScene.screenHeight);
   }
 
   private bubbleTextures = [

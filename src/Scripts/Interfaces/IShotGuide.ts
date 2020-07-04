@@ -7,6 +7,7 @@ interface IShotGuide {
     color?: number
   );
   hide();
+  analyzeGuideCircles();
 }
 
 export { IShotGuide };

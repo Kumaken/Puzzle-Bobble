@@ -5,6 +5,7 @@ import { IShotGuide } from './IShotGuide';
 
 interface IShooter extends Phaser.GameObjects.Container {
   readonly shooterHeight: number;
+  readonly shotGuide?: IShotGuide;
   onShoot(): Observable<IBubble>;
 
   setBubblePool(pool: IBubblePool);

@@ -13,7 +13,7 @@ export default class Shooter extends Phaser.GameObjects.Container
   implements IShooter {
   private bubble?: IBubble;
   private bubblePool?: IBubblePool;
-  private shotGuide?: IShotGuide;
+  public shotGuide?: IShotGuide;
   private _height: number;
   private shootSubject = new Subject<IBubble>();
   private nextBubble: IBubble;

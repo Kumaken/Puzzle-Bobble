@@ -167,7 +167,7 @@ export default class LevelScene extends Phaser.Scene {
         PreloadScene.screenScale.scaleHeight
       );
     this.shooter.setShooterGuide(
-      new ShotGuide(this, this.grid, staticBubblePool)
+      new ShotGuide(this, this.grid, staticBubblePool, 200)
     );
 
     // Shooter Bubble Pool:
